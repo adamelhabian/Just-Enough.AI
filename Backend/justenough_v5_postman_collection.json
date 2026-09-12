@@ -1,0 +1,110 @@
+{
+  "info": {
+    "name": "JustEnough V5 API Regression Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Hybrid AI Factory V5 - JustEnough Inventory Management API Regression Collection"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "bearerToken",
+      "value": "{{accessToken}}"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/auth/login"
+      }
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/health"
+      }
+    },
+    {
+      "name": "List Sales",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/sales"
+      }
+    },
+    {
+      "name": "Create Sale Record",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/sales"
+      }
+    },
+    {
+      "name": "List Inventory Snapshots",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/inventory/snapshots"
+      }
+    },
+    {
+      "name": "Create Inventory Snapshot",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/inventory/snapshots"
+      }
+    },
+    {
+      "name": "List Recommendations",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/recommendations"
+      }
+    },
+    {
+      "name": "Create Recommendation",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/recommendations"
+      }
+    },
+    {
+      "name": "List Forecasts",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/forecasts"
+      }
+    },
+    {
+      "name": "Create Quantile Forecast",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/forecasts"
+      }
+    },
+    {
+      "name": "List Operational Alerts",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/alerts"
+      }
+    },
+    {
+      "name": "Create Operational Alert",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/alerts"
+      }
+    },
+    {
+      "name": "List Ingestion Batches",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/ingest/batches"
+      }
+    }
+  ]
+}

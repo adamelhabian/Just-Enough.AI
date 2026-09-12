@@ -1,6 +1,15 @@
 __pycache__/
 *.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+.dart_tool/
+.env
 .ipynb_checkpoints/
 just_enough_ml_artifacts/
 *.DS_Store
 Thumbs.db
+
