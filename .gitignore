@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+just_enough_ml_artifacts/
+*.DS_Store
+Thumbs.db
