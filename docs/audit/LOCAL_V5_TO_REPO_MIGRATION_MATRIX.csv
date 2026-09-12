@@ -1,0 +1,13 @@
+Component,Local V5 Path,Repo Destination Path,Action,Reason,Adaptation Required,Status
+ML Engine,P03_JUSTENOUGH/AI_ML/ml,ML/just_enough_ml,Preserve Repo,Repo ML is canonical and trained,Add ML tests in ML/tests/test_ml_baseline.py,Verified
+Backend Core,P03_JUSTENOUGH/Full_Project/backend/app/core,Backend/app/core,Port & Harden,Core auth security and DB connection,Update config to support monorepo and Postgres 17,Ported
+Backend Models,P03_JUSTENOUGH/Full_Project/backend/app/models,Backend/app/models,Port & Harden,Tenant-isolated DB schemas,Align with Alembic migrations and ML BOM,Ported
+Backend API,P03_JUSTENOUGH/Full_Project/backend/app/api/v1,Backend/app/api/v1,Port & Adapt,REST endpoints for MVP personas,Add ML trigger endpoint and BOM translation,Ported
+Backend Services,P03_JUSTENOUGH/Full_Project/backend/app/services,Backend/app/services,Port & Adapt,Business logic for recommendations,Implement PREPARE ORDER MONITOR ALERT,Ported
+ML Adapter,None (New in V6.1),Backend/app/adapters/ml_adapter.py,Create New,Bridge Backend data to ML forecast,Invoke just_enough_ml.forecast_next_7_days,Created
+Migrations,P03_JUSTENOUGH/Full_Project/backend/migrations,Backend/migrations,Port,Alembic migrations for DB schema,Ensure idempotent execution,Ported
+Backend Tests,P03_JUSTENOUGH/Full_Project/backend/tests,Backend/tests,Port & Expand,Ensure >=85% test coverage,Add ML adapter and BOM contract tests,Ported
+Flutter App,P03_JUSTENOUGH/Full_Project/mobile,Frontend,Port & Modernize,Operational UI for Branch Manager & Inventory,CardThemeData upgrade and persona tabs,Ported
+Docker Compose,P03_JUSTENOUGH/Full_Project/docker-compose.yml,docker/docker-compose.yml,Port & Harden,Multi-container deployment,PostgreSQL 17-alpine with healthchecks,Ported
+Database Seed,P03_JUSTENOUGH/Full_Project/scripts/seed_database.py,scripts/seed_database.py,Port & Enhance,Idempotent demo data for restaurant R01,Include 60 days history and BOM data,Ported
+Roadmap Docs,00_CONTROL_TOWER/PROGRAM_STATUS.md,docs/JUSTENOUGH_MVP_AND_FUTURE_PRODUCT_ROADMAP.md,Create New,Clear boundary between MVP and JE-FUTURE,Document personas and timeline,Created
