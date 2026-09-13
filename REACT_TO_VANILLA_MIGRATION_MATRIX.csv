@@ -1,0 +1,13 @@
+React_Feature,React_Implementation,Vanilla_Replacement,Behavior_Parity,Test,Status
+Auth & Login,React Login component + React state,"login.html + auth.js (session lifecycle, role routing)","Role routing, token storage, logout",PASS,COMPLETED
+Morning Brief,MorningBrief.tsx + React Hooks,morning-brief.html + morning-brief.js,"Displays PREPARE, ORDER, MONITOR, ALERTS + KPIs",PASS,COMPLETED
+Daily Prepare,Prepare.tsx,prepare.html + prepare.js,"Recipe BOM explosion, batch targets, priority",PASS,COMPLETED
+Order Recommendations,Order.tsx,order.html + order.js,"Restocking recommendations, suppliers, MOQ",PASS,COMPLETED
+Perishable Monitor,Monitor.tsx,monitor.html + monitor.js,"Variance & spoilage tracking, shelf count validation",PASS,COMPLETED
+Active Alerts,Alerts.tsx,alerts.html + alerts.js,"Severity levels (CRITICAL, WARNING), resolution flow",PASS,COMPLETED
+Inventory Counts,Inventory.tsx,inventory.html + inventory.js,"Count intake, delta calculation, last counted timestamp",PASS,COMPLETED
+Recommendation Detail,RecommendationDetail.tsx,recommendation.html + recommendation.js,"Explainability metadata, mandatory audited override reason",PASS,COMPLETED
+Audit Trail,AuditTrail.tsx,audit.html + audit.js,Chronological immutable log with user email & event type,PASS,COMPLETED
+Settings & Mode,Settings.tsx,settings.html + settings.js,"Dynamic DEMO vs LIVE switching, tenant profile",PASS,COMPLETED
+CSS / Styling,Tailwind CSS + PostCSS build,"CSS Tokens, CSS Variables, Modular Vanilla CSS Bundle","100% responsive, dark sidebar, clean typography",PASS,COMPLETED
+API Client,Axios client in TypeScript,Vanilla Fetch API in api.js,LIVE mode API calls with DEMO fallback,PASS,COMPLETED

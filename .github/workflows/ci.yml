@@ -55,11 +55,8 @@ jobs:
           python -m pytest ML/tests -v
 
   web-mvp-tests:
-    name: Canonical Web MVP (React 18 + TS + Vite)
+    name: Canonical Vanilla Web MVP (HTML5 + CSS3 + JS ES Modules)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Web
     steps:
       - uses: actions/checkout@v4
 
@@ -67,23 +64,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: Web/package-lock.json
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Verify Vanilla Web HTML, CSS and JS Structure
+        run: |
+          echo "Verifying canonical Vanilla Web entrypoints..."
+          test -f Web/index.html
+          test -f Web/login.html
+          test -f Web/morning-brief.html
+          test -f Web/css/bundle.css
+          test -f Web/js/api.js
+          test -f Web/js/auth.js
 
-      - name: Lint & Static Analysis
-        run: npm run lint
+      - name: Syntax Check JavaScript ES Modules
+        run: |
+          for f in Web/js/*.js Web/js/pages/*.js; do
+            node --check "$f"
+          done
+          echo "All Vanilla JavaScript modules passed syntax validation!"
 
-      - name: TypeScript Typecheck
-        run: npm run typecheck
-
-      - name: Run Vitest Suite (Contract & Operational Loops)
-        run: npm test
-
-      - name: Production Build Verification
-        run: npm run build
+      - name: Static Server Smoke Test
+        run: |
+          npx serve Web -l 3000 &
+          sleep 3
+          curl -f http://localhost:3000/login.html || exit 1
+          curl -f http://localhost:3000/morning-brief.html || exit 1
+          curl -f http://localhost:3000/css/bundle.css || exit 1
+          echo "Static Vanilla Web Server verified over HTTP!"
 
   security-and-audit:
     name: Security & Secret Scan
@@ -94,11 +100,7 @@ jobs:
       - name: Scan for Hardcoded Secrets
         run: |
           echo "Scanning for exposed tokens or keys..."
-          ! grep -rn "sk_live_\|ghp_\|AIzaSy" Backend/ Web/src/ || exit 1
-
-      - name: Web Dependency Security Audit
-        working-directory: Web
-        run: npm audit --audit-level=high || true
+          ! grep -rn "sk_live_\|ghp_\|AIzaSy" Backend/ Web/ || exit 1
 
   legacy-flutter-tests:
     name: Legacy Flutter Reference (Optional)

@@ -12,4 +12,8 @@ build/
 just_enough_ml_artifacts/
 *.DS_Store
 Thumbs.db
+node_modules/
+Web/node_modules/
+WebReact_SUPERSEDED/node_modules/
+WebReact_SUPERSEDED/dist/
 

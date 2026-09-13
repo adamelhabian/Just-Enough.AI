@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — JustEnough.AI</title>
+  <link rel="stylesheet" href="css/bundle.css">
+  <style>
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    }
+    .login-box {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-box">
+      <div class="login-logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        JustEnough.AI
+      </div>
+      <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 24px;">Restaurant Inventory Intelligence & Replenishment</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="email">Work Email</label>
+          <input type="email" id="email" class="form-control" value="manager@justenough.ai" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" class="form-control" value="password123" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modeSelect">Data Environment</label>
+          <select id="modeSelect" class="form-control">
+            <option value="DEMO">Demo / Synthetic Mode (Instant Offline)</option>
+            <option value="LIVE">Live Backend Service</option>
+          </select>
+        </div>
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">Sign In to Dashboard</button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--gray-200); font-size: 0.8125rem; color: var(--gray-600);">
+        <strong>Quick Demo Roles:</strong><br>
+        • Manager: <code>manager@justenough.ai</code><br>
+        • Inventory: <code>employee@justenough.ai</code>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import { auth } from './js/auth.js';
+    import { storage } from './js/storage.js';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('password').value;
+      const mode = document.getElementById('modeSelect').value;
+      storage.setMode(mode);
+
+      try {
+        const res = await api.login(email, pass);
+        auth.login(res.access_token, res.user);
+        window.location.href = 'morning-brief.html';
+      } catch (err) {
+        alert('Sign-in failed: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Dashboard';
+      }
+    });
+  </script>
+</body>
+</html>
