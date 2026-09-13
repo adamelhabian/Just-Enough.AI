@@ -179,8 +179,8 @@ class Recommendation(Base, TimestampMixin, TenantScoped):
     explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     business_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
     recommended_prep: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    risk: Mapped[str] = mapped_column(String(30), default="MEDIUM")
-    policy_version: Mapped[str] = mapped_column(String(40), default='mvp-v1')
+    risk: Mapped[str] = mapped_column(String(30), default="MEDIUM", server_default="MEDIUM", nullable=True)
+    policy_version: Mapped[Optional[str]] = mapped_column(String(40), default='mvp-v1', server_default='mvp-v1', nullable=True)
 
 # 13. Overrides / Manager Decisions
 class Override(Base, TenantScoped):

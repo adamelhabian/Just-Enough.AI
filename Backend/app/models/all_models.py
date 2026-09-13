@@ -105,6 +105,7 @@ class Recommendation(Base, TenantScoped, AuditMixin):
     override_reason = Column(String(255), nullable=True)
     risk = Column(String(30), default="MEDIUM")
     explanation = Column(Text, nullable=True)
+    policy_version = Column(String(40), default="mvp-v1", nullable=True)
 
 class OperationalAlert(Base, TenantScoped, AuditMixin):
     __tablename__ = "operational_alerts"
