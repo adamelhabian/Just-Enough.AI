@@ -121,10 +121,12 @@ class InventorySnapshot(Base, TenantScoped):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     branch_id: Mapped[str] = mapped_column(String(36), index=True)
     product_id: Mapped[str] = mapped_column(String(36), index=True)
-    business_date: Mapped[date] = mapped_column(Date, index=True)
-    closing_qty: Mapped[float] = mapped_column(Float)
+    snapshot_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    quantity: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    business_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    closing_qty: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     data_flag: Mapped[str] = mapped_column(String(30), default='ACTUAL')
-    idempotency_key: Mapped[str] = mapped_column(String(100), unique=True)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(100), unique=True, nullable=True)
 
 # 9. Waste Records
 class WasteRecord(Base, TimestampMixin, TenantScoped):
@@ -158,22 +160,27 @@ class Forecast(Base, TenantScoped):
     p10: Mapped[float] = mapped_column(Float)
     p50: Mapped[float] = mapped_column(Float)
     p90: Mapped[float] = mapped_column(Float)
-    model_version: Mapped[str] = mapped_column(String(100))
-    data_quality: Mapped[float] = mapped_column(Float, default=1.0)
-    reasons_json: Mapped[str] = mapped_column(Text, default='[]')
+    model_version: Mapped[Optional[str]] = mapped_column(String(100), default="v5.0-quantile")
+    data_quality: Mapped[Optional[float]] = mapped_column(Float, default=1.0)
+    reasons_json: Mapped[Optional[str]] = mapped_column(Text, default="[]")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     __table_args__ = (UniqueConstraint('tenant_id', 'branch_id', 'product_id', 'business_date', 'model_version', name='uq_forecast_version'),)
 
-# 12. Recommendations
+# 12. Recommendations Engine Output
 class Recommendation(Base, TenantScoped):
     __tablename__ = 'recommendations'
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    forecast_id: Mapped[str] = mapped_column(ForeignKey('forecasts.id'), index=True)
+    forecast_id: Mapped[Optional[str]] = mapped_column(ForeignKey('forecasts.id'), nullable=True, index=True)
     branch_id: Mapped[str] = mapped_column(String(36), index=True)
     product_id: Mapped[str] = mapped_column(String(36), index=True)
-    business_date: Mapped[date] = mapped_column(Date, index=True)
-    recommended_prep: Mapped[float] = mapped_column(Float)
-    risk: Mapped[str] = mapped_column(String(30))
+    target_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    recommended_qty: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="pending")
+    override_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    business_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    recommended_prep: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    risk: Mapped[str] = mapped_column(String(30), default="MEDIUM")
     policy_version: Mapped[str] = mapped_column(String(40), default='mvp-v1')
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
