@@ -1,6 +1,6 @@
 import { auth } from '../auth.js';
 import { api } from '../api.js';
-import { renderLayout, bindCommonEvents } from '../ui.js';
+import { renderLayout, renderErrorState, renderCachedDataBanner, bindCommonEvents } from '../ui.js';
 
 if (auth.requireAuth()) {
   document.getElementById('appRoot').innerHTML = renderLayout('Recommendation Detail');
@@ -8,72 +8,86 @@ if (auth.requireAuth()) {
 
   async function loadData() {
     const content = document.getElementById('pageContent');
-    const params = new URLSearchParams(window.location.search);
-    const targetId = params.get('id') || 'REC-2026-001';
-
     try {
-      const recs = await api.getRecommendations();
-      const rec = recs.find(r => r.id === targetId) || recs[0];
+      const recRes = await api.getRecommendations();
+      const recs = recRes.recommendations || recRes;
+      const cachedBanner = recRes._dataSource === 'CACHED_REAL_DATA' ? renderCachedDataBanner(recRes._cachedAt) : '';
+      const demoTag = recRes._dataSource === 'DEMO_SYNTHETIC' ? ' <span class="badge" style="background:#f59e0b; color:#fff; font-size:0.7rem;">DEMO / SYNTHETIC</span>' : '';
 
       content.innerHTML = `
-        <div class="card" style="max-width: 800px;">
+        ${cachedBanner}
+        <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">Recommendation Explainability: ${rec.item_name}</h2>
-              <p style="font-size: 0.875rem; color: var(--gray-600);">Model Reference: <code>${rec.id}</code></p>
+              <h2 class="card-title">AI Recommendation Engine & Audited Override${demoTag}</h2>
+              <p style="font-size: 0.875rem; color: var(--gray-600);">Explainable purchase orders driven by LightGBM quantile regression & safety buffers.</p>
             </div>
-            <span class="badge badge-info">${rec.status}</span>
           </div>
-
-          <div style="background: var(--gray-50); padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px;">
-            <p><strong>Decision Intelligence Logic:</strong></p>
-            <p style="margin-top: 4px; color: var(--gray-700);">${rec.explanation}</p>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Recommendation ID</th>
+                  <th>Ingredient SKU</th>
+                  <th>Current Stock</th>
+                  <th>AI Recommended</th>
+                  <th>Model Confidence</th>
+                  <th>Explainability & Rationale</th>
+                  <th>Override Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${recs.map(r => `
+                  <tr>
+                    <td><code>${r.id}</code></td>
+                    <td><strong>${r.item_name}</strong></td>
+                    <td>${r.current_stock} ${r.unit}</td>
+                    <td><strong style="color: var(--primary);">${r.override_qty !== null ? r.override_qty : r.recommended_qty} ${r.unit}</strong></td>
+                    <td><span class="badge badge-info">${Math.round(r.confidence * 100)}%</span></td>
+                    <td><small style="color: var(--gray-700);">${r.explanation}</small></td>
+                    <td>
+                      ${r.status === 'OVERRIDDEN'
+                        ? `<span class="badge badge-warning">OVERRIDDEN (${r.override_qty} ${r.unit})</span><br><small style="color: var(--gray-600);">${r.override_reason}</small>`
+                        : `<span class="badge badge-success">ACCEPTED</span>`}
+                    </td>
+                    <td>
+                      <button class="btn btn-secondary override-btn" data-id="${r.id}" data-name="${r.item_name}" data-unit="${r.unit}" data-current="${r.recommended_qty}" style="font-size: 0.75rem; padding: 4px 8px;">Override</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div><strong>Current Stock:</strong> ${rec.current_stock} ${rec.unit}</div>
-            <div><strong>Recommended Order:</strong> ${rec.recommended_qty} ${rec.unit}</div>
-            <div><strong>Supplier:</strong> ${rec.supplier}</div>
-            <div><strong>Lead Time:</strong> ${rec.lead_time_days} business day(s)</div>
-          </div>
-
-          <hr style="border: 0; border-top: 1px solid var(--gray-200); margin: 20px 0;">
-
-          <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px;">Audited Manager Override</h3>
-          <form id="overrideForm">
-            <div class="form-group">
-              <label class="form-label" for="newQty">Adjusted Quantity (${rec.unit})</label>
-              <input type="number" id="newQty" class="form-control" value="${rec.override_qty || rec.recommended_qty}" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="reason">Mandatory Business Reason (min 5 chars)</label>
-              <textarea id="reason" class="form-control" rows="3" placeholder="e.g. Expected large catering reservation for dinner rush..." required>${rec.override_reason || ''}</textarea>
-              <small class="form-text">Every adjustment is immutably recorded in the corporate audit trail.</small>
-            </div>
-            <div style="display: flex; gap: 12px;">
-              <button type="submit" class="btn btn-primary">Save & Audit Override</button>
-              <a href="order.html" class="btn btn-secondary">Back to Orders</a>
-            </div>
-          </form>
         </div>
       `;
 
-      document.getElementById('overrideForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const qty = document.getElementById('newQty').value;
-        const reason = document.getElementById('reason').value;
-        const user = auth.getUser() || { email: 'manager@justenough.ai' };
-
-        try {
-          await api.overrideRecommendation(rec.id, qty, reason, user.email);
-          alert('Override successfully saved and logged to audit trail!');
-          window.location.href = 'order.html';
-        } catch (err) {
-          alert('Validation Error: ' + err.message);
-        }
+      document.querySelectorAll('.override-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          const name = e.target.dataset.name;
+          const unit = e.target.dataset.unit;
+          const current = e.target.dataset.current;
+          const newQty = prompt(`Enter audited override quantity for ${name} (${unit}) [Current AI: ${current}]:`);
+          if (newQty !== null && !isNaN(newQty)) {
+            const reason = prompt('Mandatory business reason for override (>= 5 chars):');
+            if (reason && reason.trim().length >= 5) {
+              const user = auth.getUser();
+              try {
+                await api.overrideRecommendation(id, newQty, reason, user ? user.email : 'manager@justenough.ai');
+                alert(`Override applied to ${id} with immutable audit log.`);
+                loadData();
+              } catch (err) {
+                alert('Override failed: ' + err.message);
+              }
+            } else if (reason !== null) {
+              alert('Validation Error: Override reason must be at least 5 characters.');
+            }
+          }
+        });
       });
     } catch (err) {
-      content.innerHTML = `<div class="card" style="color: var(--danger);">Error: ${err.message}</div>`;
+      content.innerHTML = renderErrorState(err);
     }
   }
   loadData();

@@ -1,6 +1,6 @@
 import { auth } from '../auth.js';
 import { api } from '../api.js';
-import { renderLayout, bindCommonEvents } from '../ui.js';
+import { renderLayout, renderErrorState, renderCachedDataBanner, bindCommonEvents } from '../ui.js';
 
 if (auth.requireAuth()) {
   document.getElementById('appRoot').innerHTML = renderLayout('Daily Prepare');
@@ -10,11 +10,15 @@ if (auth.requireAuth()) {
     const content = document.getElementById('pageContent');
     try {
       const brief = await api.getMorningBrief();
+      const cachedBanner = brief._dataSource === 'CACHED_REAL_DATA' ? renderCachedDataBanner(brief._cachedAt) : '';
+      const demoTag = brief._dataSource === 'DEMO_SYNTHETIC' ? ' <span class="badge" style="background:#f59e0b; color:#fff; font-size:0.7rem;">DEMO / SYNTHETIC</span>' : '';
+
       content.innerHTML = `
+        ${cachedBanner}
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">Kitchen Prep & Bill-of-Materials Execution</h2>
+              <h2 class="card-title">Kitchen Prep & Bill-of-Materials Execution${demoTag}</h2>
               <p style="font-size: 0.875rem; color: var(--gray-600);">Translates forecasted menu item demand into kitchen preparation batches.</p>
             </div>
             <button id="batchDoneBtn" class="btn btn-primary">Mark All Prepped</button>
@@ -51,7 +55,7 @@ if (auth.requireAuth()) {
         alert('All prep batches marked completed and deducted from raw ingredient stocks.');
       });
     } catch (err) {
-      content.innerHTML = `<div class="card" style="color: var(--danger);">Error: ${err.message}</div>`;
+      content.innerHTML = renderErrorState(err);
     }
   }
   loadData();

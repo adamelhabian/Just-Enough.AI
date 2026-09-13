@@ -1,4 +1,4 @@
-// ui.js - Shared UI Layout, Navigation & Banner Helpers
+// ui.js - Shared UI Layout, Navigation & Status Banners (V6.2 Truth Lock)
 import { auth } from './auth.js';
 import { storage } from './storage.js';
 
@@ -55,23 +55,69 @@ export function renderLayout(activePageTitle) {
       <header class="topbar">
         <h1 class="page-title">${activePageTitle}</h1>
         <div class="topbar-actions">
-          <span class="badge ${mode === 'LIVE' ? 'badge-success' : 'badge-warning'}">MODE: ${mode}</span>
-          <span style="font-size: 0.8125rem; color: var(--gray-600);">Branch: Downtown Flagship</span>
+          ${mode === 'DEMO'
+            ? `<span class="badge" style="background: #f59e0b; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; font-size: 0.8125rem; letter-spacing: 0.5px;">DEMO / SYNTHETIC</span>`
+            : `<span class="badge badge-success" style="background: #10b981; color: #ffffff; font-weight: 700; padding: 6px 12px; border-radius: 6px; font-size: 0.8125rem;">LIVE DATA</span>`
+          }
+          <span style="font-size: 0.8125rem; color: var(--gray-600);">Branch: Downtown Flagship (R01)</span>
         </div>
       </header>
       <div class="content-area">
         ${mode === 'DEMO' ? `
-        <div class="banner banner-demo">
-          <span>⚠️ <strong>DEMO / SYNTHETIC DATA MODE ACTIVE</strong>: Showing realistic offline restaurant scenario. Switch to LIVE in Settings if backend is online.</span>
-          <a href="settings.html" style="font-weight: 600; text-decoration: underline;">Configure</a>
+        <div class="banner banner-demo" style="background: #fffbeb; border: 2px solid #f59e0b; color: #92400e; padding: 12px 18px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>⚠️ DEMO / SYNTHETIC DATA ACTIVE</strong>: Displaying synthetic restaurant scenario. Canonical production behavior defaults to LIVE. Switch to LIVE in Settings to connect to production backend.
+          </div>
+          <a href="settings.html" class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 10px; margin-left: 12px;">Switch to LIVE</a>
         </div>` : `
-        <div class="banner banner-live">
-          <span>✅ <strong>LIVE BACKEND CONNECTED</strong>: PostgreSQL tenant isolation & real-time telemetry active.</span>
+        <div class="banner banner-live" style="background: #ecfdf5; border: 1px solid #10b981; color: #065f46; padding: 10px 16px; border-radius: 8px; margin-bottom: 20px;">
+          <span>✅ <strong>LIVE PRODUCTION MODE</strong>: PostgreSQL multi-tenant isolation & FastAPI backend active. Failed requests will never silently fall back to synthetic data.</span>
         </div>`}
         <div id="pageContent"></div>
       </div>
     </main>
   </div>
+  `;
+}
+
+export function renderErrorState(err) {
+  const isOffline = err.name === 'OfflineError' || (err.message && err.message.includes('OFFLINE'));
+  const isUnavailable = err.name === 'ServiceUnavailableError' || (err.message && err.message.includes('SERVICE UNAVAILABLE'));
+  const title = isOffline ? 'OFFLINE' : (isUnavailable ? 'SERVICE UNAVAILABLE' : 'COMMUNICATION ERROR');
+  const icon = isOffline ? '📡' : '🔴';
+
+  return `
+    <div class="card" style="border-left: 5px solid var(--danger); padding: 24px; margin-bottom: 24px;">
+      <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <span style="font-size: 2.25rem;">${icon}</span>
+        <div>
+          <h2 style="color: var(--danger); font-size: 1.25rem; margin-bottom: 8px; font-weight: 700;">
+            ${title}
+          </h2>
+          <p style="color: var(--gray-700); font-size: 0.9375rem; margin-bottom: 12px; line-height: 1.5;">
+            ${err.message}
+          </p>
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.8125rem; color: #991b1b;">
+            <strong>Zero-Fabrication Enforcement:</strong> Per governing directive V6.2, JustEnough.AI will <strong>NEVER</strong> automatically display synthetic or mock data when a live API request fails.
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <button onclick="window.location.reload()" class="btn btn-primary" style="font-size: 0.8125rem; padding: 8px 16px;">Retry Live Connection</button>
+            <a href="settings.html" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 8px 16px;">Explicitly Select DEMO Mode</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function renderCachedDataBanner(cachedAt) {
+  return `
+    <div class="banner banner-cached" style="background: #eff6ff; border: 1px solid #3b82f6; color: #1e40af; padding: 12px 18px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 1.25rem;">ℹ️</span>
+      <div>
+        <strong>CACHED REAL DATA</strong>: Showing real operational data cached on <code>${cachedAt}</code>. Live API is currently unreachable.
+      </div>
+    </div>
   `;
 }
 

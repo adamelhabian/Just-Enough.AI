@@ -1,9 +1,23 @@
-// api.js - API Client with LIVE & DEMO support
+// api.js - API Client with Strict DEFAULT = LIVE & No Silent Demo Fallback
 import { CONFIG } from './config.js';
 import { storage } from './storage.js';
 
-// In-memory demo data for standalone or offline verification
-const DEMO_STORE = {
+export class OfflineError extends Error {
+  constructor(message = 'Network connection offline.') {
+    super(message);
+    this.name = 'OfflineError';
+  }
+}
+
+export class ServiceUnavailableError extends Error {
+  constructor(message = 'Live backend service unreachable.') {
+    super(message);
+    this.name = 'ServiceUnavailableError';
+  }
+}
+
+// In-memory demo data for EXPLICIT demo mode only
+export const DEMO_STORE = {
   brief: {
     date: '2026-09-13',
     branch_name: 'Downtown Flagship (R01)',
@@ -50,63 +64,111 @@ const DEMO_STORE = {
   ]
 };
 
+async function executeLiveRequest(endpoint, cacheKey, options = {}) {
+  // Check browser offline status
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    const cached = storage.getCachedRealData(cacheKey);
+    if (cached) {
+      return { ...cached.data, _dataSource: 'CACHED_REAL_DATA', _cachedAt: cached.cachedAt };
+    }
+    throw new OfflineError('OFFLINE: Internet connection unavailable and no cached real data present.');
+  }
+
+  const token = storage.getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(options.headers || {})
+  };
+
+  try {
+    const resp = await fetch(`${CONFIG.apiBaseUrl}${endpoint}`, {
+      ...options,
+      headers
+    });
+
+    if (!resp.ok) {
+      // 503 or server failure
+      const cached = storage.getCachedRealData(cacheKey);
+      if (cached) {
+        return { ...cached.data, _dataSource: 'CACHED_REAL_DATA', _cachedAt: cached.cachedAt };
+      }
+      throw new ServiceUnavailableError(`SERVICE UNAVAILABLE: Live API returned status ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    storage.setCachedRealData(cacheKey, data);
+    return { ...data, _dataSource: 'LIVE' };
+  } catch (err) {
+    // Check if network failed
+    if (err instanceof OfflineError || err instanceof ServiceUnavailableError) {
+      throw err;
+    }
+    const cached = storage.getCachedRealData(cacheKey);
+    if (cached) {
+      return { ...cached.data, _dataSource: 'CACHED_REAL_DATA', _cachedAt: cached.cachedAt };
+    }
+    throw new ServiceUnavailableError(`SERVICE UNAVAILABLE: Failed to reach live backend at ${CONFIG.apiBaseUrl}${endpoint} (${err.message}). Zero-fabrication law: synthetic demo data is NEVER automatically displayed.`);
+  }
+}
+
 export const api = {
   async login(email, password) {
     const mode = storage.getMode();
     if (mode === 'DEMO') {
       const role = email.includes('employee') ? 'employee' : 'manager';
-      const res = {
+      return {
         access_token: 'demo_token_' + Date.now(),
         role: role,
         tenant_id: 'tenant_demo_1',
-        user: { email, name: role === 'manager' ? 'Branch Manager' : 'Inventory Specialist', role }
+        user: { email, name: role === 'manager' ? 'Branch Manager' : 'Inventory Specialist', role },
+        _dataSource: 'DEMO_SYNTHETIC'
       };
-      return res;
     }
-    // LIVE mode
-    const resp = await fetch(`${CONFIG.apiBaseUrl}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    if (!resp.ok) throw new Error(`Authentication failed with status ${resp.status}`);
-    return await resp.json();
+
+    // LIVE mode authentication
+    try {
+      const resp = await fetch(`${CONFIG.apiBaseUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!resp.ok) {
+        throw new Error(`Authentication failed with status ${resp.status}`);
+      }
+      const data = await resp.json();
+      return { ...data, _dataSource: 'LIVE' };
+    } catch (err) {
+      throw new ServiceUnavailableError(`SERVICE UNAVAILABLE: Live authentication service is currently unreachable (${err.message}).`);
+    }
   },
 
   async getMorningBrief() {
-    if (storage.getMode() === 'DEMO') return DEMO_STORE.brief;
-    const resp = await fetch(`${CONFIG.apiBaseUrl}/brief`, {
-      headers: { 'Authorization': `Bearer ${storage.getToken()}` }
-    });
-    if (!resp.ok) throw new Error('Failed to fetch morning brief');
-    return await resp.json();
+    if (storage.getMode() === 'DEMO') {
+      return { ...DEMO_STORE.brief, _dataSource: 'DEMO_SYNTHETIC' };
+    }
+    return await executeLiveRequest('/brief', CONFIG.storageKeys.cachedBrief);
   },
 
   async getInventory() {
-    if (storage.getMode() === 'DEMO') return DEMO_STORE.inventory;
-    const resp = await fetch(`${CONFIG.apiBaseUrl}/inventory`, {
-      headers: { 'Authorization': `Bearer ${storage.getToken()}` }
-    });
-    if (!resp.ok) throw new Error('Failed to fetch inventory');
-    return await resp.json();
+    if (storage.getMode() === 'DEMO') {
+      return { items: DEMO_STORE.inventory, _dataSource: 'DEMO_SYNTHETIC' };
+    }
+    return await executeLiveRequest('/inventory', CONFIG.storageKeys.cachedInventory);
   },
 
   async getAlerts() {
-    if (storage.getMode() === 'DEMO') return DEMO_STORE.brief.alerts;
-    const resp = await fetch(`${CONFIG.apiBaseUrl}/alerts`, {
-      headers: { 'Authorization': `Bearer ${storage.getToken()}` }
-    });
-    if (!resp.ok) throw new Error('Failed to fetch alerts');
-    return await resp.json();
+    if (storage.getMode() === 'DEMO') {
+      return { alerts: DEMO_STORE.brief.alerts, _dataSource: 'DEMO_SYNTHETIC' };
+    }
+    return await executeLiveRequest('/alerts', CONFIG.storageKeys.cachedAlerts);
   },
 
   async getRecommendations() {
-    if (storage.getMode() === 'DEMO') return DEMO_STORE.recommendations;
-    const resp = await fetch(`${CONFIG.apiBaseUrl}/recommendations`, {
-      headers: { 'Authorization': `Bearer ${storage.getToken()}` }
-    });
-    if (!resp.ok) throw new Error('Failed to fetch recommendations');
-    return await resp.json();
+    if (storage.getMode() === 'DEMO') {
+      return { recommendations: DEMO_STORE.recommendations, _dataSource: 'DEMO_SYNTHETIC' };
+    }
+    return await executeLiveRequest('/recommendations', CONFIG.storageKeys.cachedRecommendations);
   },
 
   async overrideRecommendation(id, newQty, reason, userEmail) {
@@ -126,19 +188,21 @@ export const api = {
         timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
         user_email: userEmail,
         action: 'RECOMMENDATION_OVERRIDE',
-        details: `Overrode ${id} quantity to ${newQty} (Reason: ${reason})`
+        details: `[DEMO] Overrode ${id} quantity to ${newQty} (Reason: ${reason})`
       });
-      return { success: true, updated: rec };
+      return { success: true, updated: rec, _dataSource: 'DEMO_SYNTHETIC' };
     }
+
+    const token = storage.getToken();
     const resp = await fetch(`${CONFIG.apiBaseUrl}/recommendations/${id}/override`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${storage.getToken()}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ override_qty: Number(newQty), reason: reason.trim() })
     });
-    if (!resp.ok) throw new Error('Failed to submit override');
+    if (!resp.ok) throw new ServiceUnavailableError(`SERVICE UNAVAILABLE: Failed to submit override to live backend (Status ${resp.status})`);
     return await resp.json();
   },
 
@@ -154,29 +218,29 @@ export const api = {
           timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
           user_email: userEmail,
           action: 'INVENTORY_ADJUSTMENT',
-          details: `Adjusted ${item.name} (${id}) to ${newCount} ${item.unit} (Delta: ${delta > 0 ? '+' : ''}${delta})`
+          details: `[DEMO] Adjusted ${item.name} (${id}) to ${newCount} ${item.unit} (Delta: ${delta > 0 ? '+' : ''}${delta})`
         });
       }
-      return { success: true };
+      return { success: true, _dataSource: 'DEMO_SYNTHETIC' };
     }
+
+    const token = storage.getToken();
     const resp = await fetch(`${CONFIG.apiBaseUrl}/inventory/${id}/adjust`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${storage.getToken()}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ count: Number(newCount), reason })
     });
-    if (!resp.ok) throw new Error('Failed to submit inventory adjustment');
+    if (!resp.ok) throw new ServiceUnavailableError(`SERVICE UNAVAILABLE: Failed to submit inventory adjustment (Status ${resp.status})`);
     return await resp.json();
   },
 
   async getAuditLogs() {
-    if (storage.getMode() === 'DEMO') return DEMO_STORE.audit;
-    const resp = await fetch(`${CONFIG.apiBaseUrl}/audit-logs`, {
-      headers: { 'Authorization': `Bearer ${storage.getToken()}` }
-    });
-    if (!resp.ok) throw new Error('Failed to fetch audit logs');
-    return await resp.json();
+    if (storage.getMode() === 'DEMO') {
+      return { logs: DEMO_STORE.audit, _dataSource: 'DEMO_SYNTHETIC' };
+    }
+    return await executeLiveRequest('/audit-logs', CONFIG.storageKeys.cachedAudit);
   }
 };

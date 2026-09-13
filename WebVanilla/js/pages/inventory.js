@@ -1,6 +1,6 @@
 import { auth } from '../auth.js';
 import { api } from '../api.js';
-import { renderLayout, bindCommonEvents } from '../ui.js';
+import { renderLayout, renderErrorState, renderCachedDataBanner, bindCommonEvents } from '../ui.js';
 
 if (auth.requireAuth()) {
   document.getElementById('appRoot').innerHTML = renderLayout('Inventory Counts');
@@ -9,25 +9,30 @@ if (auth.requireAuth()) {
   async function loadData() {
     const content = document.getElementById('pageContent');
     try {
-      const items = await api.getInventory();
+      const invRes = await api.getInventory();
+      const items = invRes.items || invRes;
+      const cachedBanner = invRes._dataSource === 'CACHED_REAL_DATA' ? renderCachedDataBanner(invRes._cachedAt) : '';
+      const demoTag = invRes._dataSource === 'DEMO_SYNTHETIC' ? ' <span class="badge" style="background:#f59e0b; color:#fff; font-size:0.7rem;">DEMO / SYNTHETIC</span>' : '';
+
       content.innerHTML = `
+        ${cachedBanner}
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">Stock Count & Physical Reconciliation</h2>
-              <p style="font-size: 0.875rem; color: var(--gray-600);">Log actual physical ingredient counts to update on-hand levels.</p>
+              <h2 class="card-title">Physical Cycle Counting & Stock Reconciliation${demoTag}</h2>
+              <p style="font-size: 0.875rem; color: var(--gray-600);">Real-time inventory levels, safety thresholds, and audited adjustments.</p>
             </div>
           </div>
           <div class="table-container">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>SKU</th>
-                  <th>Ingredient Name</th>
+                  <th>SKU Code</th>
+                  <th>Ingredient / Item</th>
                   <th>Category</th>
-                  <th>On-Hand Stock</th>
-                  <th>Safety Threshold</th>
-                  <th>Status</th>
+                  <th>Current Stock</th>
+                  <th>Safety Stock</th>
+                  <th>Health Status</th>
                   <th>Last Counted</th>
                   <th>Action</th>
                 </tr>
@@ -43,7 +48,7 @@ if (auth.requireAuth()) {
                     <td><span class="badge ${item.status === 'CRITICAL' ? 'badge-danger' : (item.status === 'WARNING' ? 'badge-warning' : 'badge-success')}">${item.status}</span></td>
                     <td><small>${item.last_counted}</small></td>
                     <td>
-                      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="window.countItem('${item.id}', '${item.name}', ${item.current_stock}, '${item.unit}')">Update Count</button>
+                      <button class="btn btn-secondary count-btn" data-id="${item.id}" data-name="${item.name}" data-unit="${item.unit}" style="font-size: 0.75rem; padding: 4px 8px;">Reconcile</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -53,18 +58,29 @@ if (auth.requireAuth()) {
         </div>
       `;
 
-      window.countItem = async (id, name, currentStock, unit) => {
-        const val = prompt(`Enter new physical count for ${name} (${unit}):`, currentStock);
-        if (val !== null && !isNaN(val) && val.trim() !== '') {
-          const reason = prompt('Enter count reconciliation reason:', 'Physical shelf count') || 'Routine count';
-          const user = auth.getUser() || { email: 'manager@justenough.ai' };
-          await api.adjustInventory(id, Number(val), reason, user.email);
-          alert(`Updated ${name} to ${val} ${unit}`);
-          loadData();
-        }
-      };
+      document.querySelectorAll('.count-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          const name = e.target.dataset.name;
+          const unit = e.target.dataset.unit;
+          const newCount = prompt(`Enter physical count for ${name} (${unit}):`);
+          if (newCount !== null && !isNaN(newCount)) {
+            const reason = prompt('Mandatory reason for adjustment (e.g., Weekly cycle count):', 'Physical cycle count');
+            if (reason) {
+              const user = auth.getUser();
+              try {
+                await api.adjustInventory(id, newCount, reason, user ? user.email : 'manager@justenough.ai');
+                alert(`Successfully adjusted ${name} to ${newCount} ${unit}.`);
+                loadData();
+              } catch (err) {
+                alert('Adjustment failed: ' + err.message);
+              }
+            }
+          }
+        });
+      });
     } catch (err) {
-      content.innerHTML = `<div class="card" style="color: var(--danger);">Error: ${err.message}</div>`;
+      content.innerHTML = renderErrorState(err);
     }
   }
   loadData();

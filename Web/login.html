@@ -16,7 +16,7 @@
     }
     .login-box {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       background: #fff;
       border-radius: var(--radius-lg);
       padding: 36px;
@@ -52,17 +52,20 @@
           <input type="password" id="password" class="form-control" value="password123" required>
         </div>
         <div class="form-group">
-          <label class="form-label" for="modeSelect">Data Environment</label>
+          <label class="form-label" for="modeSelect">Data Environment (Default: LIVE)</label>
           <select id="modeSelect" class="form-control">
-            <option value="DEMO">Demo / Synthetic Mode (Instant Offline)</option>
-            <option value="LIVE">Live Backend Service</option>
+            <option value="LIVE" selected>Live Backend Service (Default Production)</option>
+            <option value="DEMO">Demo / Synthetic Mode (Explicit Selection Only)</option>
           </select>
+          <small class="form-text" style="color: var(--gray-600); font-size: 0.75rem; margin-top: 4px; display: block;">
+            Canonical production defaults to LIVE. DEMO must be explicitly chosen.
+          </small>
         </div>
         <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">Sign In to Dashboard</button>
       </form>
 
       <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--gray-200); font-size: 0.8125rem; color: var(--gray-600);">
-        <strong>Quick Demo Roles:</strong><br>
+        <strong>Live Production Users (R01):</strong><br>
         • Manager: <code>manager@justenough.ai</code><br>
         • Inventory: <code>employee@justenough.ai</code>
       </div>

@@ -1,6 +1,6 @@
 import { auth } from '../auth.js';
 import { api } from '../api.js';
-import { renderLayout, bindCommonEvents } from '../ui.js';
+import { renderLayout, renderErrorState, renderCachedDataBanner, bindCommonEvents } from '../ui.js';
 
 if (auth.requireAuth()) {
   document.getElementById('appRoot').innerHTML = renderLayout('Audit Trail');
@@ -9,26 +9,39 @@ if (auth.requireAuth()) {
   async function loadData() {
     const content = document.getElementById('pageContent');
     try {
-      const logs = await api.getAuditLogs();
+      const auditRes = await api.getAuditLogs();
+      const logs = auditRes.logs || auditRes;
+      const cachedBanner = auditRes._dataSource === 'CACHED_REAL_DATA' ? renderCachedDataBanner(auditRes._cachedAt) : '';
+      const demoTag = auditRes._dataSource === 'DEMO_SYNTHETIC' ? ' <span class="badge" style="background:#f59e0b; color:#fff; font-size:0.7rem;">DEMO / SYNTHETIC</span>' : '';
+
       content.innerHTML = `
+        ${cachedBanner}
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">Immutable Audit Trail & Regulatory Log</h2>
-              <p style="font-size: 0.875rem; color: var(--gray-600);">Chronological log of all inventory reconciliations and recommendation overrides.</p>
+              <h2 class="card-title">Immutable Compliance Audit Trail${demoTag}</h2>
+              <p style="font-size: 0.875rem; color: var(--gray-600);">Chronological record of manager overrides, stock adjustments, and system events.</p>
             </div>
           </div>
           <div class="table-container">
             <table class="data-table">
-              <thead><tr><th>Event ID</th><th>Timestamp</th><th>Actor Email</th><th>Action Type</th><th>Event Details</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Audit ID</th>
+                  <th>Timestamp (UTC)</th>
+                  <th>User / Actor</th>
+                  <th>Action Category</th>
+                  <th>Event Details</th>
+                </tr>
+              </thead>
               <tbody>
-                ${logs.map(log => `
+                ${logs.map(l => `
                   <tr>
-                    <td><code>${log.id}</code></td>
-                    <td>${log.timestamp}</td>
-                    <td><strong>${log.user_email}</strong></td>
-                    <td><span class="badge badge-info">${log.action}</span></td>
-                    <td>${log.details}</td>
+                    <td><code>${l.id}</code></td>
+                    <td><small>${l.timestamp}</small></td>
+                    <td><strong>${l.user_email}</strong></td>
+                    <td><span class="badge ${l.action.includes('OVERRIDE') ? 'badge-warning' : 'badge-info'}">${l.action}</span></td>
+                    <td>${l.details}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -37,7 +50,7 @@ if (auth.requireAuth()) {
         </div>
       `;
     } catch (err) {
-      content.innerHTML = `<div class="card" style="color: var(--danger);">Error: ${err.message}</div>`;
+      content.innerHTML = renderErrorState(err);
     }
   }
   loadData();
