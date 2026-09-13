@@ -37,6 +37,7 @@ def seed():
 
     # Ensure tables exist
     CanonicalBase.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
     tenant_id = "tenant_demo_1"
