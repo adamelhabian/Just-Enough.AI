@@ -1,0 +1,33 @@
+# ============================================================
+# JustEnough — Docker build exclusions
+# ============================================================
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+__pycache__
+*.pyc
+.pytest_cache
+.coverage
+htmlcov
+*.egg-info
+dist
+build
+.dart_tool
+.ipynb_checkpoints
+just_enough_ml_artifacts
+*.DS_Store
+Thumbs.db
+Frontend
+docs
+scripts
+*.md
+*.txt
+!requirements.txt
+docker
+*.zip
+*.tar.gz
+.vscode
+.idea
+node_modules

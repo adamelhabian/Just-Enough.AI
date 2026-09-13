@@ -63,7 +63,7 @@ def seed():
             manager = User(
                 id=str(uuid.uuid4()),
                 email="manager@justenough.ai",
-                hashed_password=hash_password("JustEnough2026!"),
+                hashed_password=hash_password(os.environ.get("SEED_USER_PASSWORD", "ChangeMeBeforeProduction!")),
                 full_name="Karim Mansour (Branch Manager)",
                 role="manager",
                 tenant_id=tenant_id,
@@ -77,7 +77,7 @@ def seed():
             inventory_user = User(
                 id=str(uuid.uuid4()),
                 email="inventory@justenough.ai",
-                hashed_password=hash_password("JustEnough2026!"),
+                hashed_password=hash_password(os.environ.get("SEED_USER_PASSWORD", "ChangeMeBeforeProduction!")),
                 full_name="Ahmed Zaki (Inventory Clerk)",
                 role="employee",
                 tenant_id=tenant_id,
