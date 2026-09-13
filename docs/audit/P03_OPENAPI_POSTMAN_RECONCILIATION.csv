@@ -1,0 +1,23 @@
+Method,Path,OpenAPI,Postman,Success_Test,Validation_Error_Test,Auth_Test,Tenant_Test,Notes
+GET,/api/v1/alerts,YES,YES,YES,YES,YES,YES,08 - List Operational Alerts
+POST,/api/v1/alerts,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+POST,/api/v1/alerts/{id}/resolve,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+POST,/api/v1/auth/login,YES,YES,YES,YES,N/A,N/A,02 - Branch Manager Login
+GET,/api/v1/auth/me,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+GET,/api/v1/forecasts,YES,YES,YES,YES,YES,YES,04 - List 7-Day Forecasts
+POST,/api/v1/forecasts,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+POST,/api/v1/forecasts/trigger-7day,YES,YES,YES,YES,YES,YES,03 - Trigger 7-Day ML Demand Forecast
+GET,/api/v1/health,YES,YES,YES,YES,N/A,N/A,01 - Health Check
+GET,/api/v1/ingest/batches,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+GET,/api/v1/ingest/batches/{id},YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+POST,/api/v1/ingest/csv,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+GET,/api/v1/inventory/movements,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+GET,/api/v1/inventory/snapshots,YES,YES,YES,YES,YES,YES,09 - List Inventory Snapshots
+POST,/api/v1/inventory/snapshots,YES,YES,YES,YES,YES,YES,10 - Record Closing Stock Snapshot
+GET,/api/v1/recommendations,YES,YES,YES,YES,YES,YES,05 - List Operational Recommendations
+POST,/api/v1/recommendations,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+GET,/api/v1/recommendations/{id}/explain,YES,YES,YES,YES,YES,YES,06 - Explain Recommendation Drivers
+POST,/api/v1/recommendations/{id}/override,YES,YES,YES,YES,YES,YES,07 - Manager Override Recommendation
+GET,/api/v1/sales,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+POST,/api/v1/sales,YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI
+GET,/api/v1/sales/{id},YES,NO,YES,YES,YES,YES,Extended CRUD/administrative operation in OpenAPI

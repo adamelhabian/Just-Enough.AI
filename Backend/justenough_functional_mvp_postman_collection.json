@@ -12,6 +12,10 @@
     {
       "key": "accessToken",
       "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
     }
   ],
   "item": [
@@ -42,7 +46,7 @@
             },
             {
               "key": "password",
-              "value": "JustEnough2026!"
+              "value": "{{password}}"
             }
           ]
         }
