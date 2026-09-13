@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { ChefHat, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 

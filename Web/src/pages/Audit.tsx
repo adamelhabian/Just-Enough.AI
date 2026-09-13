@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ClipboardList, ShieldCheck, Filter } from 'lucide-react';
 import { api } from '../api/client';
 import { AuditLog } from '../types';

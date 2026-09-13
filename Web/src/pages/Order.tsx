@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, CheckCircle2, SlidersHorizontal, ArrowRight, ExternalLink } from 'lucide-react';
 import { api } from '../api/client';

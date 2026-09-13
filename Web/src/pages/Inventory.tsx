@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Boxes, Search, Plus, SlidersHorizontal, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '../api/client';
 import { InventoryItem } from '../types';

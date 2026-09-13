@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { api, setDataMode } from '../api/client';
 
 describe('JustEnough Web Client Engine', () => {

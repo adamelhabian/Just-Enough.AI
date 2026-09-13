@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole, DataMode } from '../types';
 import { api, getDataMode, setDataMode as persistDataMode, getAuthToken, setAuthToken } from '../api/client';
 

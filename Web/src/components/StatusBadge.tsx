@@ -1,7 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 
 interface StatusBadgeProps {
-  status: 'SHORTAGE' | 'WASTE' | 'NORMAL' | 'CRITICAL' | 'LOW' | 'SURPLUS' | 'ACTIVE' | 'RESOLVED' | 'PENDING' | 'ACCEPTED' | 'OVERRIDDEN';
+  status: 'SHORTAGE' | 'WASTE' | 'NORMAL' | 'CRITICAL' | 'LOW' | 'SURPLUS' | 'ACTIVE' | 'RESOLVED' | 'PENDING' | 'ACCEPTED' | 'OVERRIDDEN' | 'REJECTED';
   className?: string;
 }
 
@@ -11,6 +11,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ''
   switch (status) {
     case 'SHORTAGE':
     case 'CRITICAL':
+    case 'REJECTED':
       badgeStyle = 'bg-red-50 text-[#D32F2F] border-red-200 ring-1 ring-red-200';
       break;
     case 'WASTE':

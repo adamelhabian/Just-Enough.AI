@@ -1,4 +1,4 @@
-﻿export type UserRole = 'manager' | 'employee' | 'admin';
+export type UserRole = 'manager' | 'employee' | 'admin';
 export type DataMode = 'LIVE' | 'DEMO';
 
 export interface User {
