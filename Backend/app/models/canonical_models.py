@@ -116,7 +116,7 @@ class SalesRecord(Base, TimestampMixin, TenantScoped):
     __table_args__ = (UniqueConstraint('tenant_id', 'branch_id', 'product_id', 'business_date', name='uq_tenant_branch_product_sales_date'),)
 
 # 8. Inventory Snapshots & Closing Stock
-class InventorySnapshot(Base, TenantScoped):
+class InventorySnapshot(Base, TimestampMixin, TenantScoped):
     __tablename__ = 'inventory_snapshots'
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     branch_id: Mapped[str] = mapped_column(String(36), index=True)
@@ -151,7 +151,7 @@ class ExternalFactor(Base, TimestampMixin, TenantScoped):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 # 11. Forecasts (Probabilistic Quantiles)
-class Forecast(Base, TenantScoped):
+class Forecast(Base, TimestampMixin, TenantScoped):
     __tablename__ = 'forecasts'
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     branch_id: Mapped[str] = mapped_column(String(36), index=True)
@@ -163,11 +163,10 @@ class Forecast(Base, TenantScoped):
     model_version: Mapped[Optional[str]] = mapped_column(String(100), default="v5.0-quantile")
     data_quality: Mapped[Optional[float]] = mapped_column(Float, default=1.0)
     reasons_json: Mapped[Optional[str]] = mapped_column(Text, default="[]")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     __table_args__ = (UniqueConstraint('tenant_id', 'branch_id', 'product_id', 'business_date', 'model_version', name='uq_forecast_version'),)
 
 # 12. Recommendations Engine Output
-class Recommendation(Base, TenantScoped):
+class Recommendation(Base, TimestampMixin, TenantScoped):
     __tablename__ = 'recommendations'
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     forecast_id: Mapped[Optional[str]] = mapped_column(ForeignKey('forecasts.id'), nullable=True, index=True)
@@ -182,7 +181,6 @@ class Recommendation(Base, TenantScoped):
     recommended_prep: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     risk: Mapped[str] = mapped_column(String(30), default="MEDIUM")
     policy_version: Mapped[str] = mapped_column(String(40), default='mvp-v1')
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 # 13. Overrides / Manager Decisions
 class Override(Base, TenantScoped):
