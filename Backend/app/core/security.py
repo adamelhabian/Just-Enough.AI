@@ -10,13 +10,34 @@ from app.core.errors import AuthorizationError
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
-def hash_password(password: str) -> str:
-    salt = "justenough_salt_v5"
-    return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
+import secrets
+
+def hash_password(password: str, iterations: int = 100000) -> str:
+    """Secure password hashing using PBKDF2-HMAC-SHA256 with random per-user 16-byte salt."""
+    salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), iterations)
+    return f"pbkdf2_sha256${iterations}${salt}${key.hex()}"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    expected = hash_password(plain_password)
-    return hmac.compare_digest(expected, hashed_password)
+    """Verify password against pbkdf2_sha256 hash or legacy format."""
+    if not hashed_password or not plain_password:
+        return False
+    try:
+        if hashed_password.startswith("pbkdf2_sha256$"):
+            parts = hashed_password.split("$")
+            if len(parts) != 4:
+                return False
+            _, iterations_str, salt, stored_hash = parts
+            iterations = int(iterations_str)
+            calculated_hash = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), salt.encode('utf-8'), iterations).hex()
+            return hmac.compare_digest(calculated_hash, stored_hash)
+        # Backward compatibility for legacy fixed-salt hashes
+        if len(hashed_password) == 64:
+            legacy = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), b"justenough_salt_v5", 100000).hex()
+            return hmac.compare_digest(legacy, hashed_password)
+    except Exception:
+        return False
+    return False
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()

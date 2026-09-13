@@ -1,0 +1,62 @@
+name: JustEnough MVP CI
+
+on:
+  push:
+    branches: [ 'mvp/justenough-functional-mvp' ]
+  pull_request:
+    branches: [ 'mvp/justenough-functional-mvp' ]
+
+jobs:
+  backend-and-ml-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./Backend[test]"
+          pip install -r ML/requirements.txt || true
+          pip install lightgbm scikit-learn pandas numpy joblib
+
+      - name: Run Backend Pytest Suite
+        env:
+          ENVIRONMENT: test
+          SECRET_KEY: test_secret_key_with_at_least_32_characters!
+          DATABASE_URL: sqlite:///:memory:
+        run: |
+          python -m pytest Backend/tests -v
+
+      - name: Run ML Baseline Pytest Suite
+        run: |
+          python -m pytest ML/tests -v
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter Dependencies
+        working-directory: Frontend
+        run: flutter pub get
+
+      - name: Flutter Static Analysis
+        working-directory: Frontend
+        run: flutter analyze
+
+      - name: Flutter Test Suite
+        working-directory: Frontend
+        run: flutter test

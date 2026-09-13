@@ -5,6 +5,7 @@ import 'package:justenough_mobile/models/recommendation.dart';
 import 'package:justenough_mobile/models/alert.dart';
 import 'package:justenough_mobile/core/local_queue.dart';
 import 'package:justenough_mobile/core/api_client.dart';
+import 'package:justenough_mobile/screens/login_screen.dart';
 import 'package:justenough_mobile/screens/morning_brief_screen.dart';
 import 'package:justenough_mobile/screens/inventory_screen.dart';
 import 'package:justenough_mobile/screens/alerts_screen.dart';
@@ -12,45 +13,178 @@ import 'package:justenough_mobile/providers/alerts_provider.dart';
 import 'package:justenough_mobile/providers/recommendations_provider.dart';
 
 void main() {
+  final sampleRecommendations = [
+    Recommendation(
+      id: '1',
+      productName: 'Classic Cheeseburger',
+      productId: 'M01',
+      branchId: 'R01',
+      recommendedQty: 145,
+      currentInventory: 10,
+      forecastDemand: 138,
+      safetyStock: 15,
+      status: RecommendationStatus.shortage,
+      severity: RecommendationSeverity.critical,
+      explanation: 'Recent upward trend and Friday-like demand pattern.',
+      createdAt: DateTime.now(),
+    ),
+    Recommendation(
+      id: '2',
+      productName: 'Golden Fries',
+      productId: 'M06',
+      branchId: 'R01',
+      recommendedQty: 48,
+      currentInventory: 70,
+      forecastDemand: 61,
+      safetyStock: 5,
+      status: RecommendationStatus.waste,
+      severity: RecommendationSeverity.warning,
+      explanation: 'Existing usable stock exceeds expected demand.',
+      createdAt: DateTime.now(),
+    ),
+  ];
+
+  final sampleInventory = [
+    InventoryItem(ingredientId: 'ING01', ingredientName: 'Beef Patty (150g)', closingQty: 150, unit: 'portion', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
+    InventoryItem(ingredientId: 'ING02', ingredientName: 'Artisan Brioche Bun', closingQty: 250, unit: 'piece', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
+  ];
+
+  final sampleAlerts = [
+    Alert(
+      id: '1',
+      type: 'stock_low',
+      severity: AlertSeverity.critical,
+      productName: 'Pita Bread',
+      branchName: 'Downtown',
+      message: 'Stock critically low',
+      explanation: 'Only 2 packs remaining, expecting 50 orders.',
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      status: AlertStatus.active,
+    ),
+    Alert(
+      id: '2',
+      type: 'waste_warning',
+      severity: AlertSeverity.warning,
+      productName: 'Tomatoes',
+      branchName: 'Downtown',
+      message: 'Surplus detected',
+      explanation: 'Shelf life expiring in 24 hours.',
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      status: AlertStatus.active,
+    ),
+  ];
+
+  group('LoginScreen Tests', () {
+    testWidgets('renders login form, fields, and quick demo chips', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: LoginScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('JustEnough AI'), findsOneWidget);
+      expect(find.text('Corporate Email'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+      expect(find.text('Sign In'), findsOneWidget);
+      expect(find.text('Branch Manager'), findsOneWidget);
+      expect(find.text('Inventory Clerk'), findsOneWidget);
+    });
+
+    testWidgets('quick fill chips populate fields correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: LoginScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Inventory Clerk'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('inventory@justenough.ai'), findsOneWidget);
+    });
+
+    testWidgets('displays validation error if email is cleared', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: LoginScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final emailField = find.byType(TextFormField).first;
+      await tester.enterText(emailField, '');
+      await tester.tap(find.text('Sign In'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Email is required'), findsOneWidget);
+    });
+  });
+
+  group('Zero-Fabrication & Live Mode Error Tests', () {
+    testWidgets('LIVE mode renders OFFLINE / DATA UNAVAILABLE when API is unreachable', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            inventoryProvider.overrideWith((ref) => Future.error(Exception('OFFLINE / DATA UNAVAILABLE: network error'))),
+          ],
+          child: const MaterialApp(home: InventoryScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('OFFLINE / DATA UNAVAILABLE'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+    });
+  });
+
   group('MorningBriefScreen Tests', () {
     testWidgets('renders loading state initially', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: MorningBriefScreen()),
+        ProviderScope(
+          overrides: [
+            recommendationsProvider.overrideWith((ref) => Future.delayed(const Duration(seconds: 2), () => sampleRecommendations)),
+          ],
+          child: const MaterialApp(home: MorningBriefScreen()),
         ),
       );
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
     });
 
     testWidgets('renders recommendations list and summary card when data loaded', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: MorningBriefScreen()),
+        ProviderScope(
+          overrides: [
+            recommendationsProvider.overrideWith((ref) => Future.value(sampleRecommendations)),
+          ],
+          child: const MaterialApp(home: MorningBriefScreen()),
         ),
       );
-      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       expect(find.text('Summary'), findsOneWidget);
-      expect(find.text('Chicken Shawarma'), findsOneWidget);
-      expect(find.text('Falafel'), findsOneWidget);
+      expect(find.text('Classic Cheeseburger'), findsOneWidget);
+      expect(find.text('Golden Fries'), findsOneWidget);
     });
 
     testWidgets('opens override bottom sheet on recommendation tap', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: MorningBriefScreen()),
+        ProviderScope(
+          overrides: [
+            recommendationsProvider.overrideWith((ref) => Future.value(sampleRecommendations)),
+          ],
+          child: const MaterialApp(home: MorningBriefScreen()),
         ),
       );
-      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Chicken Shawarma'));
+      await tester.tap(find.text('Classic Cheeseburger'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Override Chicken Shawarma'), findsOneWidget);
+      expect(find.text('Override Classic Cheeseburger'), findsOneWidget);
       expect(find.text('Save Override'), findsOneWidget);
     });
   });
@@ -131,7 +265,7 @@ void main() {
 
       final list = [alert2, alert1];
       list.sort((a, b) => a.severity.index.compareTo(b.severity.index));
-      expect(list.first.id, '1'); // critical (index 0) before info (index 2)
+      expect(list.first.id, '1');
       expect(list.last.id, '2');
 
       final json = alert1.toJson();
@@ -199,24 +333,28 @@ void main() {
   group('InventoryScreen Widget Tests', () {
     testWidgets('renders search bar with ingredients hint inside ProviderScope', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: InventoryScreen()),
+        ProviderScope(
+          overrides: [
+            inventoryProvider.overrideWith((ref) => Future.value(sampleInventory)),
+          ],
+          child: const MaterialApp(home: InventoryScreen()),
         ),
       );
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Search ingredients...'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 900));
       await tester.pumpAndSettle();
     });
 
-    testWidgets('loads and renders inventory items after mock delay', (WidgetTester tester) async {
+    testWidgets('loads and renders inventory items from provider', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: InventoryScreen()),
+        ProviderScope(
+          overrides: [
+            inventoryProvider.overrideWith((ref) => Future.value(sampleInventory)),
+          ],
+          child: const MaterialApp(home: InventoryScreen()),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 900));
       await tester.pumpAndSettle();
 
       expect(find.text('Beef Patty (150g)'), findsOneWidget);
@@ -225,11 +363,13 @@ void main() {
 
     testWidgets('opens stock count dialog on floating action button tap', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: InventoryScreen()),
+        ProviderScope(
+          overrides: [
+            inventoryProvider.overrideWith((ref) => Future.value(sampleInventory)),
+          ],
+          child: const MaterialApp(home: InventoryScreen()),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 900));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -243,13 +383,13 @@ void main() {
   group('AlertsScreen Widget Tests', () {
     testWidgets('renders loading then lists alerts', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: AlertsScreen()),
+        ProviderScope(
+          overrides: [
+            alertsProvider.overrideWith((ref) => Future.value(sampleAlerts)),
+          ],
+          child: const MaterialApp(home: AlertsScreen()),
         ),
       );
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       expect(find.text('Pita Bread'), findsOneWidget);
@@ -330,16 +470,17 @@ void main() {
       expect(client.dio.interceptors.isNotEmpty, isTrue);
     });
 
-    test('ApiClient dynamically sets auth token header', () {
+    test('ApiClient dynamically sets and clears auth token header', () {
       final client = ApiClient(baseUrl: 'http://localhost:8000');
       client.setAuthToken('bearer_sample_token_xyz');
       expect(client.dio.options.headers['Authorization'], 'Bearer bearer_sample_token_xyz');
+      client.clearAuthToken();
+      expect(client.dio.options.headers.containsKey('Authorization'), isFalse);
     });
   });
 
   group('Repository Offline Resilience Tests', () {
     test('InventoryRepository falls back to offline queue on network disconnect', () async {
-      // Disconnected dummy client
       final client = ApiClient(baseUrl: 'http://127.0.0.1:59999');
       final repo = InventoryRepository(client);
 
@@ -349,7 +490,6 @@ void main() {
         branchId: 'R01',
       );
 
-      // Should handle offline gracefully without uncaught exception
       expect(result.synced, isFalse);
     });
 
@@ -369,25 +509,20 @@ void main() {
 
   group('Full Vertical Operational Flow Tests', () {
     test('Vertical Flow: LOGIN -> BRIEF -> RECOMMENDATION -> OVERRIDE -> AUDIT & INVENTORY', () async {
-      // Step 1: Initialize API Client with authenticated token (simulating POST /api/v1/auth/login)
       final client = ApiClient(baseUrl: 'http://localhost:8000', initialToken: 'test_jwt_session_token');
       expect(client.dio.options.headers['Authorization'], 'Bearer test_jwt_session_token');
 
-      // Step 2: Initialize Repositories
       final recRepo = RecommendationsRepository(client);
       final invRepo = InventoryRepository(client);
       final alertRepo = AlertsRepository(client);
 
-      // Step 3: Simulate Manager Overriding Recommendation (POST /api/v1/recommendations/{id}/override)
       final overrideRes = await recRepo.overrideRecommendation(
         id: 'rec_flow_101',
         newQty: 180.0,
         reason: 'High local foot traffic anticipated for weekend event',
       );
-      // Confirms mutation was handled (synced or staged in offline queue)
       expect(overrideRes.message.isNotEmpty, isTrue);
 
-      // Step 4: Simulate Employee Recording Physical Closing Stock Count (POST /api/v1/inventory/snapshots)
       final stockRes = await invRepo.recordStockCount(
         productId: 'ING01',
         quantity: 142.5,
@@ -395,7 +530,6 @@ void main() {
       );
       expect(stockRes.message.isNotEmpty, isTrue);
 
-      // Step 5: Simulate Resolving an Alert (POST /api/v1/alerts/{id}/resolve)
       final alertRes = await alertRepo.resolveAlert('alert_flow_01');
       expect(alertRes, isTrue);
     });

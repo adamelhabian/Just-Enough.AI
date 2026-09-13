@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/alerts_provider.dart';
 import '../models/alert.dart';
 
+import '../providers/auth_provider.dart';
+
 class AlertsScreen extends ConsumerWidget {
   const AlertsScreen({super.key});
 
@@ -15,7 +17,18 @@ class AlertsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Alerts',
             onPressed: () => ref.invalidate(alertsProvider),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign Out',
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
           ),
         ],
       ),

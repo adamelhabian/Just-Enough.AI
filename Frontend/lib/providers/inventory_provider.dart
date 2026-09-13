@@ -4,15 +4,17 @@ import '../models/inventory_item.dart';
 import '../core/api_client.dart';
 import '../core/local_queue.dart';
 
+const bool isDemoMode = bool.fromEnvironment('DEMO_MODE', defaultValue: false);
+
 final mockInventoryItems = <InventoryItem>[
-  InventoryItem(ingredientId: 'ING01', ingredientName: 'Beef Patty (150g)', closingQty: 150, unit: 'portion', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  InventoryItem(ingredientId: 'ING02', ingredientName: 'Artisan Brioche Bun', closingQty: 250, unit: 'piece', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  InventoryItem(ingredientId: 'ING03', ingredientName: 'Aged Cheddar Cheese', closingQty: 80, unit: 'piece', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  InventoryItem(ingredientId: 'ING04', ingredientName: 'Smoked Beef Bacon', closingQty: 8, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  InventoryItem(ingredientId: 'ING05', ingredientName: 'Chicken Breast Fillet', closingQty: 35, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  InventoryItem(ingredientId: 'ING06', ingredientName: 'French Fries (Frozen)', closingQty: 45, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  InventoryItem(ingredientId: 'ING07', ingredientName: 'Truffle Oil Infusion', closingQty: 2.5, unit: 'liter', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  InventoryItem(ingredientId: 'ING08', ingredientName: 'Parmesan (Shredded)', closingQty: 4, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING01', ingredientName: 'Beef Patty (150g) [DEMO]', closingQty: 150, unit: 'portion', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING02', ingredientName: 'Artisan Brioche Bun [DEMO]', closingQty: 250, unit: 'piece', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING03', ingredientName: 'Aged Cheddar Cheese [DEMO]', closingQty: 80, unit: 'piece', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING04', ingredientName: 'Smoked Beef Bacon [DEMO]', closingQty: 8, unit: 'kg', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING05', ingredientName: 'Chicken Breast Fillet [DEMO]', closingQty: 35, unit: 'kg', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING06', ingredientName: 'French Fries (Frozen) [DEMO]', closingQty: 45, unit: 'kg', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING07', ingredientName: 'Truffle Oil Infusion [DEMO]', closingQty: 2.5, unit: 'liter', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
+  InventoryItem(ingredientId: 'ING08', ingredientName: 'Parmesan (Shredded) [DEMO]', closingQty: 4, unit: 'kg', dataFlag: 'SYNTHETIC / DEMO', branchId: 'R01', businessDate: DateTime.now()),
 ];
 
 final inventoryProvider = FutureProvider<List<InventoryItem>>((ref) async {
@@ -22,16 +24,20 @@ final inventoryProvider = FutureProvider<List<InventoryItem>>((ref) async {
     if (response.statusCode == 200 && response.data != null) {
       final data = response.data;
       final rawList = data is Map ? (data['data'] as List? ?? []) : (data is List ? data : []);
-      if (rawList.isNotEmpty) {
-        return rawList
-            .map((e) => InventoryItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
+      return rawList
+          .map((e) => InventoryItem.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
+    throw Exception('Unexpected response code: ${response.statusCode}');
   } catch (e) {
-    log('Inventory API fetch error, falling back to cached/mock data: $e');
+    log('Inventory API fetch error: $e');
+    if (isDemoMode) {
+      log('[DEMO_MODE] Returning synthetic inventory items labeled SYNTHETIC / DEMO');
+      return mockInventoryItems;
+    }
+    // LIVE mode: No silent fabrication. Re-throw error so UI renders OFFLINE / DATA UNAVAILABLE state
+    throw Exception('OFFLINE / DATA UNAVAILABLE: Unable to retrieve inventory snapshots ($e)');
   }
-  return mockInventoryItems;
 });
 
 class StockCountResult {

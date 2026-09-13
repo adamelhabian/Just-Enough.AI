@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/recommendation.dart';
 import '../providers/recommendations_provider.dart';
 
+import '../providers/auth_provider.dart';
+
 class MorningBriefScreen extends ConsumerWidget {
   const MorningBriefScreen({super.key});
 
@@ -11,7 +13,21 @@ class MorningBriefScreen extends ConsumerWidget {
     final recommendationsAsync = ref.watch(recommendationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Morning Brief')),
+      appBar: AppBar(
+        title: const Text('Morning Brief'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign Out',
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+          ),
+        ],
+      ),
       body: recommendationsAsync.when(
         data: (recommendations) {
           if (recommendations.isEmpty) {

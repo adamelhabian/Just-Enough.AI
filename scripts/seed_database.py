@@ -57,34 +57,35 @@ def seed():
             db.add(tenant)
             print("[+] Created demo tenant: Downtown Hospitality Group")
 
-        # 2. Users (Branch Manager & Inventory Employee)
-        manager = db.query(User).filter(User.email == "manager@justenough.ai").first()
-        if not manager:
-            manager = User(
-                id=str(uuid.uuid4()),
-                email="manager@justenough.ai",
-                hashed_password=hash_password(os.environ.get("SEED_USER_PASSWORD", "ChangeMeBeforeProduction!")),
-                full_name="Karim Mansour (Branch Manager)",
-                role="manager",
-                tenant_id=tenant_id,
-                is_active=True
-            )
-            db.add(manager)
-            print("[+] Created Branch Manager user: manager@justenough.ai")
-
-        inventory_user = db.query(User).filter(User.email == "inventory@justenough.ai").first()
-        if not inventory_user:
-            inventory_user = User(
-                id=str(uuid.uuid4()),
-                email="inventory@justenough.ai",
-                hashed_password=hash_password(os.environ.get("SEED_USER_PASSWORD", "ChangeMeBeforeProduction!")),
-                full_name="Ahmed Zaki (Inventory Clerk)",
-                role="employee",
-                tenant_id=tenant_id,
-                is_active=True
-            )
-            db.add(inventory_user)
-            print("[+] Created Inventory Employee user: inventory@justenough.ai")
+        # 2. Users (Branch Manager, Inventory Employee, and Demo Users)
+        default_pwd = os.environ.get("SEED_USER_PASSWORD", "ChangeMeBeforeProduction!")
+        users_to_seed = [
+            ("manager@justenough.ai", default_pwd, "Karim Mansour (Branch Manager)", "manager", tenant_id),
+            ("inventory@justenough.ai", default_pwd, "Ahmed Zaki (Inventory Clerk)", "employee", tenant_id),
+            ("admin@demo.com", "admin", "Demo System Administrator", "admin", tenant_id),
+            ("employee@demo.com", "employee", "Demo Inventory Specialist", "employee", tenant_id),
+        ]
+        for email, pwd, name, role, tid in users_to_seed:
+            u = db.query(User).filter(User.email == email).first()
+            if not u:
+                u = User(
+                    id=str(uuid.uuid4()),
+                    email=email,
+                    hashed_password=hash_password(pwd),
+                    full_name=name,
+                    role=role,
+                    tenant_id=tid,
+                    is_active=True
+                )
+                db.add(u)
+                print(f"[+] Created user: {email} ({role})")
+            else:
+                u.hashed_password = hash_password(pwd)
+                u.full_name = name
+                u.role = role
+                u.tenant_id = tid
+                u.is_active = True
+                print(f"[+] Updated user to PBKDF2: {email} ({role})")
 
         # 3. Branch
         branch = db.query(Branch).filter(Branch.id == branch_id, Branch.tenant_id == tenant_id).first()

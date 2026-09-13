@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -16,22 +17,25 @@ class ApiError implements Exception {
 
 class ApiClient {
   late final Dio dio;
+  String? _token;
+  void Function()? onSessionExpired;
 
   ApiClient({String? baseUrl, String? initialToken}) {
+    _token = initialToken;
     dio = Dio(BaseOptions(
       baseUrl: baseUrl ?? const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000'),
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 30),
     ));
 
-    if (initialToken != null && initialToken.isNotEmpty) {
-      dio.options.headers['Authorization'] = 'Bearer $initialToken';
+    if (_token != null && _token!.isNotEmpty) {
+      dio.options.headers['Authorization'] = 'Bearer $_token';
     }
 
-    // Auth Interceptor
+    // Auth & 401 Session Interceptor
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        final token = initialToken ?? const String.fromEnvironment('API_TOKEN');
+        final token = _token ?? const String.fromEnvironment('API_TOKEN');
         if (token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
@@ -39,7 +43,9 @@ class ApiClient {
       },
       onError: (DioException e, handler) async {
         if (e.response?.statusCode == 401) {
-          log('Token expired, attempting refresh...');
+          log('[AUTH] 401 Unauthorized received. Session expired or revoked.');
+          clearAuthToken();
+          onSessionExpired?.call();
         }
         return handler.next(e);
       },
@@ -92,15 +98,35 @@ class ApiClient {
       },
     ));
 
-    // Logging
-    dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-      logPrint: (obj) => log(obj.toString()),
-    ));
+    // Sanitized Logging: Disabled in Release mode, sanitized in Debug/Profile mode
+    if (!kReleaseMode) {
+      dio.interceptors.add(LogInterceptor(
+        requestBody: false, // Never log request bodies to protect passwords & PII
+        responseBody: false, // Never log raw payloads
+        requestHeader: true,
+        responseHeader: false,
+        logPrint: (obj) {
+          final raw = obj.toString();
+          // Redact Authorization headers
+          final sanitized = raw.replaceAll(
+            RegExp(r'Bearer\s+[A-Za-z0-9\-_.]+', caseSensitive: false),
+            'Bearer [REDACTED]',
+          );
+          log(sanitized);
+        },
+      ));
+    }
   }
 
   void setAuthToken(String token) {
+    _token = token;
     dio.options.headers['Authorization'] = 'Bearer $token';
   }
+
+  void clearAuthToken() {
+    _token = null;
+    dio.options.headers.remove('Authorization');
+  }
+
+  String? get currentToken => _token;
 }

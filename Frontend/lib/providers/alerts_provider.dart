@@ -4,26 +4,28 @@ import '../models/alert.dart';
 import '../core/api_client.dart';
 import '../core/local_queue.dart';
 
+const bool isDemoMode = bool.fromEnvironment('DEMO_MODE', defaultValue: false);
+
 final mockAlerts = <Alert>[
   Alert(
-    id: '1',
+    id: 'DEMO-1',
     type: 'stock_low',
     severity: AlertSeverity.critical,
-    productName: 'Pita Bread',
-    branchName: 'Downtown',
-    message: 'Stock critically low',
-    explanation: 'Only 2 packs remaining, expecting 50 orders.',
+    productName: 'Pita Bread [DEMO]',
+    branchName: 'Downtown Bistro R01',
+    message: 'Stock critically low [SYNTHETIC / DEMO]',
+    explanation: 'Demonstration alert for evaluation.',
     createdAt: DateTime.now().subtract(const Duration(hours: 1)),
     status: AlertStatus.active,
   ),
   Alert(
-    id: '2',
+    id: 'DEMO-2',
     type: 'waste_warning',
     severity: AlertSeverity.warning,
-    productName: 'Tomatoes',
-    branchName: 'Downtown',
-    message: 'Surplus detected',
-    explanation: 'Shelf life expiring in 24 hours.',
+    productName: 'Tomatoes [DEMO]',
+    branchName: 'Downtown Bistro R01',
+    message: 'Surplus detected [SYNTHETIC / DEMO]',
+    explanation: 'Demonstration alert for evaluation.',
     createdAt: DateTime.now().subtract(const Duration(hours: 3)),
     status: AlertStatus.active,
   ),
@@ -36,16 +38,20 @@ final alertsProvider = FutureProvider<List<Alert>>((ref) async {
     if (response.statusCode == 200 && response.data != null) {
       final data = response.data;
       final rawList = data is Map ? (data['data'] as List? ?? []) : (data is List ? data : []);
-      if (rawList.isNotEmpty) {
-        return rawList
-            .map((e) => Alert.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
+      return rawList
+          .map((e) => Alert.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
+    throw Exception('Unexpected server response: ${response.statusCode}');
   } catch (e) {
-    log('Alerts API fetch error, falling back to cached/mock alerts: $e');
+    log('Alerts API fetch error: $e');
+    if (isDemoMode) {
+      log('[DEMO_MODE] Falling back to labeled synthetic alerts');
+      return mockAlerts;
+    }
+    // LIVE mode: No silent fabrication. Re-throw error so UI renders OFFLINE / DATA UNAVAILABLE state
+    throw Exception('OFFLINE / DATA UNAVAILABLE: Unable to retrieve operational alerts ($e)');
   }
-  return mockAlerts;
 });
 
 class AlertsRepository {

@@ -5,8 +5,8 @@ from datetime import datetime
 from app.core.database import Base
 
 class AuditMixin:
-    created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
-    updated_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), onupdate=datetime.utcnow)
+    created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), default=datetime.utcnow)
+    updated_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class SoftDeleteMixin:
     deleted_at = Column(DateTime, nullable=True)
@@ -124,7 +124,7 @@ class AuditLog(Base, TenantScoped):
     entity_type = Column(String(80), nullable=False)
     entity_id = Column(String(36), nullable=False)
     payload_json = Column(Text, default="{}")
-    created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+    created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), default=datetime.utcnow)
 
 class WasteRecord(Base, TenantScoped, AuditMixin):
     __tablename__ = "waste_records"

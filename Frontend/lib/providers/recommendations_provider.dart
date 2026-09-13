@@ -4,33 +4,35 @@ import '../models/recommendation.dart';
 import '../core/api_client.dart';
 import '../core/local_queue.dart';
 
+const bool isDemoMode = bool.fromEnvironment('DEMO_MODE', defaultValue: false);
+
 final mockRecommendations = <Recommendation>[
   Recommendation(
-    id: '1',
-    productName: 'Chicken Shawarma',
-    productId: 'p1',
-    branchId: 'b1',
+    id: 'DEMO-REC-1',
+    productName: 'Classic Cheeseburger [DEMO]',
+    productId: 'M01',
+    branchId: 'R01',
     recommendedQty: 145,
     currentInventory: 10,
     forecastDemand: 138,
     safetyStock: 15,
     status: RecommendationStatus.shortage,
     severity: RecommendationSeverity.critical,
-    explanation: 'Recent upward trend and Friday-like demand pattern.',
+    explanation: 'Demonstration recommendation: upward trend [SYNTHETIC / DEMO].',
     createdAt: DateTime.now(),
   ),
   Recommendation(
-    id: '2',
-    productName: 'Falafel',
-    productId: 'p2',
-    branchId: 'b1',
+    id: 'DEMO-REC-2',
+    productName: 'Golden Fries [DEMO]',
+    productId: 'M06',
+    branchId: 'R01',
     recommendedQty: 48,
     currentInventory: 70,
     forecastDemand: 61,
     safetyStock: 5,
     status: RecommendationStatus.waste,
     severity: RecommendationSeverity.warning,
-    explanation: 'Existing usable stock exceeds expected demand.',
+    explanation: 'Demonstration recommendation: stock surplus [SYNTHETIC / DEMO].',
     createdAt: DateTime.now(),
   ),
 ];
@@ -42,16 +44,20 @@ final recommendationsProvider = FutureProvider<List<Recommendation>>((ref) async
     if (response.statusCode == 200 && response.data != null) {
       final data = response.data;
       final rawList = data is Map ? (data['data'] as List? ?? []) : (data is List ? data : []);
-      if (rawList.isNotEmpty) {
-        return rawList
-            .map((e) => Recommendation.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
+      return rawList
+          .map((e) => Recommendation.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
+    throw Exception('Unexpected server response: ${response.statusCode}');
   } catch (e) {
-    log('Recommendations API fetch error, falling back to mock recommendations: $e');
+    log('Recommendations API fetch error: $e');
+    if (isDemoMode) {
+      log('[DEMO_MODE] Falling back to labeled synthetic recommendations');
+      return mockRecommendations;
+    }
+    // LIVE mode: No silent fabrication. Re-throw error so UI renders OFFLINE / DATA UNAVAILABLE state
+    throw Exception('OFFLINE / DATA UNAVAILABLE: Unable to retrieve recommendations ($e)');
   }
-  return mockRecommendations;
 });
 
 class OverrideResult {

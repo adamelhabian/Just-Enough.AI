@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/inventory_provider.dart';
 
+import '../providers/auth_provider.dart';
+
 // Re-export for backwards compatibility with tests and screens
 export '../models/inventory_item.dart';
 export '../providers/inventory_provider.dart';
@@ -108,7 +110,21 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   Widget build(BuildContext context) {
     final inventoryAsync = ref.watch(inventoryProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventory')),
+      appBar: AppBar(
+        title: const Text('Inventory'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign Out',
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
