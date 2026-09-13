@@ -6,6 +6,9 @@ from app.core.database import SessionLocal, get_db
 from app.core.security import hash_password
 from app.models.all_models import User, Branch, Product, InventorySnapshot, Recommendation, OperationalAlert
 
+from app.core.database import engine, Base, SessionLocal, get_db
+from app.models.canonical_models import Base as CanonicalBase
+
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)

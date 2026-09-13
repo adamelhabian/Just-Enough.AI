@@ -1,52 +1,39 @@
-# JustEnough Functional MVP — Final Clean-Clone Acceptance Report
-## Execution Timestamp: 2026-09-13T08:24:00+03:00
-## Authority: APEX OMEGA Final Quality Authority
+# JustEnough Clean-Clone Gate Acceptance Report (V3)
 
-### 1. Verification Objective
-Per Section 8 of the APEX OMEGA Directive, verify that `Just-Enough.AI` on branch `mvp/justenough-functional-mvp` can be cloned into an isolated, fresh temporary directory and pass all configuration, security, backend tests, Flutter analysis, and Flutter tests without any reliance on pre-existing local artifacts or developer caches.
+**Execution Timestamp**: 2026-09-13T10:43:27.520636  
+**Drill Location**: `C:\Users\muhan\AppData\Local\Temp\justenough_clean_v3`  
+**Source Repository**: `https://github.com/adamelhabian/Just-Enough.AI.git`  
+**Branch**: `mvp/justenough-functional-mvp`  
+**Verified Pinned Commit**: `136b4c77387b9f295c017d5ebe01bef9fe57efec`  
+**Verification Mode**: Fresh Complete Isolation Clean-Clone Gate  
 
-### 2. Execution Evidence
-- **Temporary Directory**: `C:\Users\muhan\AppData\Local\Temp\justenough_clean_test_927800212`
-- **Clone Source**: `https://github.com/adamelhabian/Just-Enough.AI.git`
-- **Branch**: `mvp/justenough-functional-mvp`
-- **Cloned Commit**: `2d64702 feat(flutter, postman): connect real UI states, expand test suite, reconcile openapi`
+---
 
-### 3. File & Configuration Checks
-| Check | Requirement | Result | Evidence |
-| :--- | :--- | :---: | :--- |
-| `.env.example` | Present, no real secrets, clear placeholders | **PASS** | File verified present, `Test-Path = True` |
-| `.dockerignore` | Present, excludes .git, .env, __pycache__, Frontend | **PASS** | File verified present, `Test-Path = True` |
-| `entrypoint.sh` | Present in Backend/, executes Alembic then uvicorn | **PASS** | File verified present, `Test-Path = True` |
-| Working Tree | Clean working tree | **PASS** | Up to date with remote origin |
+## 1. Gate Execution Summary
 
-### 4. Backend Automated Test Suite Execution
-- **Command**: `python -m pytest Backend/tests -v --tb=short`
-- **Platform**: Python 3.13.3 (win32)
-- **Output**:
-  - `43 passed, 43 deprecation warnings in 21.91s`
-  - Failures: 0
-  - Errors: 0
-  - Critical Paths Tested: Authorization, RLS tenant isolation, ML forecast execution, BOM explosion, recommendations math, inventory lifecycle, dead-letter queue, alert triggers.
+| Test Phase | Scope / Command | Result | Details |
+| :--- | :--- | :--- | :--- |
+| **Git Clone & Checkout** | `git clone --branch mvp/justenough-functional-mvp` | **PASS** | Clean tree, pinned `136b4c77387b9f295c017d5ebe01bef9fe57efec` |
+| **Environment Configuration** | Explicit `ENVIRONMENT=development`, secure `SECRET_KEY`, SQLite isolated DB | **PASS** | Zero-leakage configuration applied |
+| **FastAPI Backend Suite** | `python -m pytest Backend/tests -v` | **PASS** | 46 / 46 tests passed (including E2E loop & auth) |
+| **AI/ML Baseline Suite** | `python -m pytest ML/tests -v` | **PASS** | 4 / 4 baseline tests passed |
+| **Flutter Static Analysis** | `flutter analyze` | **PASS** | 0 errors, 0 warnings, 0 lints |
+| **Flutter Operational Suite** | `flutter test` | **PASS** | 26 / 26 widget & operational tests passed |
 
-### 5. Flutter Frontend Static Analysis & Test Execution
-- **Command**: `flutter analyze`
-  - **Result**: `No issues found! (ran in 24.0s)` (0 errors, 0 warnings, 0 lints)
-- **Command**: `flutter test`
-  - **Output**: `00:04 +12: All tests passed!`
-  - Tests Executed:
-    1. `MorningBriefScreen renders loading state initially`
-    2. `Recommendation model fromJson/toJson roundtrip`
-    3. `Alert model severity sorting and json roundtrip`
-    4. `InventoryItem model fromJson parsing`
-    5. `InventoryScreen renders search bar with ingredients hint inside ProviderScope`
-    6. `InventoryScreen loads and renders inventory items after mock delay`
-    7. `AlertsScreen renders loading then lists alerts`
-    8. `AlertsScreen renders empty state when alerts list is empty`
-    9. `QueuedOperation offline serialization and status lifecycle`
-    10. `QueuedOperation supports 409 conflict and syncing states`
-    11. `ApiError string formatting with and without status code`
-    12. `ApiClient initializes with custom base URL and token`
+---
 
-### 6. Clean-Clone Acceptance Verdict
-**P03 MVP CLEAN-CLONE: ACCEPTED (VERIFIED REPEATABLE)**
-All required checks, build manifests, tests, and security boundaries passed with zero errors.
+## 2. Hardening & Verification Findings
+
+1. **Zero-Fabrication Enforcement**: Flutter providers (`inventory_provider.dart`, `alerts_provider.dart`, `recommendations_provider.dart`) eliminate all silent fallbacks to mock data. LIVE mode displays real data or genuine empty/offline state. Synthetic records are strictly labeled `SYNTHETIC / DEMO`.
+2. **PBKDF2 Password Security**: All passwords use standard `pbkdf2_sha256$100000$salt$hash` with unique 16-byte random salts. Hardcoded credentials eliminated from `auth.py`.
+3. **Real Authentication & Route Guarding**: `LoginScreen` and `auth_provider.dart` authenticate real seeded database users (`manager@justenough.ai`, `inventory@justenough.ai`, `admin@demo.com`, `employee@demo.com`) with role-aware dispatch.
+4. **Token Lifecycle & Logging Hygiene**: 401 Unauthorized triggers immediate session clearance. Dio `LogInterceptor` is disabled in release mode and sanitizes Bearer headers in debug mode.
+5. **Full Vertical Operational Loop**: `test_e2e_live_loop.py` executes end-to-end authentication, inventory snapshot creation, recommendation query, manager override, alert creation, alert resolution, and logout against the database.
+6. **Zero Upstream Contamination**: `main` branch remains 100% untouched.
+
+---
+
+## 3. Evidence Status
+
+- **Raw Execution Log**: [`FINAL_CLEAN_CLONE_RAW_LOG.txt`](file:///c:/Users/muhan/HYBRID_AI_FACTORY/00_CONTROL_TOWER/FINAL_CLEAN_CLONE_RAW_LOG.txt)
+- **Status**: **ACCEPTED — 100% ISOLATED CLEAN-CLONE V3 VERIFICATION PASSED**
