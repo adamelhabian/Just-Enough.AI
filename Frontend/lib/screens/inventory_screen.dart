@@ -1,56 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/inventory_provider.dart';
 
-// Inventory item model matching backend schema
-class InventoryItem {
-  final String ingredientId;
-  final String ingredientName;
-  final double closingQty;
-  final String unit;
-  final String dataFlag;
-  final String branchId;
-  final DateTime businessDate;
-
-  InventoryItem({
-    required this.ingredientId,
-    required this.ingredientName,
-    required this.closingQty,
-    required this.unit,
-    required this.dataFlag,
-    required this.branchId,
-    required this.businessDate,
-  });
-
-  factory InventoryItem.fromJson(Map<String, dynamic> json) {
-    return InventoryItem(
-      ingredientId: json['product_id'] as String? ?? json['ingredient_id'] as String? ?? '',
-      ingredientName: json['product_name'] as String? ?? json['ingredient_name'] as String? ?? 'Unknown',
-      closingQty: (json['closing_qty'] as num?)?.toDouble() ?? 0,
-      unit: json['unit'] as String? ?? 'unit',
-      dataFlag: json['data_flag'] as String? ?? 'ACTUAL',
-      branchId: json['branch_id'] as String? ?? '',
-      businessDate: json['business_date'] != null
-          ? DateTime.parse(json['business_date'] as String)
-          : DateTime.now(),
-    );
-  }
-}
-
-// Mock data provider (MVP: falls back to mock when API unavailable)
-final inventoryProvider = FutureProvider<List<InventoryItem>>((ref) async {
-  // PROTOTYPE: Mock data fallback for MVP demo
-  await Future.delayed(const Duration(milliseconds: 800));
-  return [
-    InventoryItem(ingredientId: 'ING01', ingredientName: 'Beef Patty (150g)', closingQty: 150, unit: 'portion', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-    InventoryItem(ingredientId: 'ING02', ingredientName: 'Artisan Brioche Bun', closingQty: 250, unit: 'piece', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-    InventoryItem(ingredientId: 'ING03', ingredientName: 'Aged Cheddar Cheese', closingQty: 80, unit: 'piece', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-    InventoryItem(ingredientId: 'ING04', ingredientName: 'Smoked Beef Bacon', closingQty: 8, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-    InventoryItem(ingredientId: 'ING05', ingredientName: 'Chicken Breast Fillet', closingQty: 35, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-    InventoryItem(ingredientId: 'ING06', ingredientName: 'French Fries (Frozen)', closingQty: 45, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-    InventoryItem(ingredientId: 'ING07', ingredientName: 'Truffle Oil Infusion', closingQty: 2.5, unit: 'liter', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-    InventoryItem(ingredientId: 'ING08', ingredientName: 'Parmesan (Shredded)', closingQty: 4, unit: 'kg', dataFlag: 'ACTUAL', branchId: 'R01', businessDate: DateTime.now()),
-  ];
-});
+// Re-export for backwards compatibility with tests and screens
+export '../models/inventory_item.dart';
+export '../providers/inventory_provider.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
   const InventoryScreen({super.key});
@@ -61,6 +15,94 @@ class InventoryScreen extends ConsumerStatefulWidget {
 
 class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   String _searchQuery = '';
+
+  void _showStockCountDialog(BuildContext context) {
+    final productIdController = TextEditingController(text: 'ING01');
+    final qtyController = TextEditingController();
+    final branchController = TextEditingController(text: 'R01');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Record Stock Count'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: productIdController,
+                  decoration: const InputDecoration(
+                    labelText: 'Product / Ingredient ID',
+                    hintText: 'e.g. ING01, ING02',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: qtyController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Physical Quantity Counted',
+                    hintText: '0.0',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: branchController,
+                  decoration: const InputDecoration(
+                    labelText: 'Branch ID',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final qty = double.tryParse(qtyController.text.trim());
+                final prodId = productIdController.text.trim();
+                final branchId = branchController.text.trim();
+
+                if (qty == null || qty < 0 || prodId.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid product ID and non-negative quantity.')),
+                  );
+                  return;
+                }
+
+                Navigator.pop(ctx);
+
+                final repo = ref.read(inventoryRepositoryProvider);
+                final result = await repo.recordStockCount(
+                  productId: prodId,
+                  quantity: qty,
+                  branchId: branchId.isNotEmpty ? branchId : 'R01',
+                );
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result.message),
+                      backgroundColor: result.synced ? Colors.green[700] : Colors.orange[800],
+                    ),
+                  );
+                  ref.invalidate(inventoryProvider);
+                }
+              },
+              child: const Text('Submit Count'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +145,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               data: (items) {
                 final filtered = _searchQuery.isEmpty
                     ? items
-                    : items.where((i) => i.ingredientName.toLowerCase().contains(_searchQuery)).toList();
+                    : items.where((i) => i.ingredientName.toLowerCase().contains(_searchQuery) || i.ingredientId.toLowerCase().contains(_searchQuery)).toList();
                 if (filtered.isEmpty) {
                   return Center(
                     child: Column(
@@ -152,7 +194,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('${item.closingQty.toStringAsFixed(1)}',
+                              Text(item.closingQty.toStringAsFixed(1),
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,
@@ -173,11 +215,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Stock count feature — coming in next release')),
-          );
-        },
+        onPressed: () => _showStockCountDialog(context),
         child: const Icon(Icons.add),
         tooltip: 'Count Stock',
       ),

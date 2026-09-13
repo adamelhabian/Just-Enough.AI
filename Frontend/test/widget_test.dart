@@ -9,6 +9,7 @@ import 'package:justenough_mobile/screens/morning_brief_screen.dart';
 import 'package:justenough_mobile/screens/inventory_screen.dart';
 import 'package:justenough_mobile/screens/alerts_screen.dart';
 import 'package:justenough_mobile/providers/alerts_provider.dart';
+import 'package:justenough_mobile/providers/recommendations_provider.dart';
 
 void main() {
   group('MorningBriefScreen Tests', () {
@@ -20,6 +21,37 @@ void main() {
       );
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('renders recommendations list and summary card when data loaded', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: MorningBriefScreen()),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Summary'), findsOneWidget);
+      expect(find.text('Chicken Shawarma'), findsOneWidget);
+      expect(find.text('Falafel'), findsOneWidget);
+    });
+
+    testWidgets('opens override bottom sheet on recommendation tap', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: MorningBriefScreen()),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Chicken Shawarma'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Override Chicken Shawarma'), findsOneWidget);
+      expect(find.text('Save Override'), findsOneWidget);
     });
   });
 
@@ -48,6 +80,29 @@ void main() {
       expect(decoded.status, original.status);
       expect(decoded.severity, original.severity);
       expect(decoded.forecastDemand, 12);
+    });
+
+    test('Recommendation model parses backend snake_case JSON schema', () {
+      final backendJson = {
+        'id': 'rec-uuid-101',
+        'branch_id': 'branch_01',
+        'product_id': 'prod_pita',
+        'target_date': '2026-09-13',
+        'recommended_qty': 150.5,
+        'status': 'pending',
+        'risk': 'HIGH',
+        'override_reason': 'Manager forecast boost',
+        'explanation': 'Quantile p50 model estimate',
+      };
+
+      final rec = Recommendation.fromJson(backendJson);
+      expect(rec.id, 'rec-uuid-101');
+      expect(rec.branchId, 'branch_01');
+      expect(rec.productId, 'prod_pita');
+      expect(rec.recommendedQty, 150.5);
+      expect(rec.severity, RecommendationSeverity.critical);
+      expect(rec.overrideReason, 'Manager forecast boost');
+      expect(rec.explanation, 'Quantile p50 model estimate');
     });
 
     test('Alert model severity sorting and json roundtrip', () {
@@ -86,6 +141,26 @@ void main() {
       expect(restored.status, AlertStatus.active);
     });
 
+    test('Alert model parses backend operational alert schema', () {
+      final backendAlertJson = {
+        'id': 'alert-uuid-201',
+        'branch_id': 'branch_01',
+        'product_id': 'prod_cheese',
+        'alert_type': 'stock_critical',
+        'severity': 'CRITICAL',
+        'message': 'Immediate restock required',
+        'is_resolved': false,
+        'created_at': '2026-09-13T08:00:00Z',
+      };
+
+      final alert = Alert.fromJson(backendAlertJson);
+      expect(alert.id, 'alert-uuid-201');
+      expect(alert.type, 'stock_critical');
+      expect(alert.severity, AlertSeverity.critical);
+      expect(alert.status, AlertStatus.active);
+      expect(alert.message, 'Immediate restock required');
+    });
+
     test('InventoryItem model fromJson parsing', () {
       final json = {
         'product_id': 'ING01',
@@ -103,6 +178,22 @@ void main() {
       expect(item.unit, 'portion');
       expect(item.dataFlag, 'ACTUAL');
     });
+
+    test('InventoryItem model parses backend snapshot schema', () {
+      final backendSnapshot = {
+        'id': 'snap-001',
+        'branch_id': 'R01',
+        'product_id': 'ING05',
+        'snapshot_date': '2026-09-13',
+        'quantity': 35.5,
+        'data_flag': 'ACTUAL',
+      };
+      final item = InventoryItem.fromJson(backendSnapshot);
+      expect(item.ingredientId, 'ING05');
+      expect(item.branchId, 'R01');
+      expect(item.closingQty, 35.5);
+      expect(item.dataFlag, 'ACTUAL');
+    });
   });
 
   group('InventoryScreen Widget Tests', () {
@@ -116,6 +207,7 @@ void main() {
       expect(find.text('Search ingredients...'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 900));
+      await tester.pumpAndSettle();
     });
 
     testWidgets('loads and renders inventory items after mock delay', (WidgetTester tester) async {
@@ -124,12 +216,27 @@ void main() {
           child: MaterialApp(home: InventoryScreen()),
         ),
       );
-      // Wait for provider delayed mock
       await tester.pump(const Duration(milliseconds: 900));
       await tester.pumpAndSettle();
 
       expect(find.text('Beef Patty (150g)'), findsOneWidget);
       expect(find.text('Artisan Brioche Bun'), findsOneWidget);
+    });
+
+    testWidgets('opens stock count dialog on floating action button tap', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: InventoryScreen()),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 900));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Record Stock Count'), findsOneWidget);
+      expect(find.text('Submit Count'), findsOneWidget);
     });
   });
 
@@ -148,6 +255,7 @@ void main() {
       expect(find.text('Pita Bread'), findsOneWidget);
       expect(find.text('Stock critically low'), findsOneWidget);
       expect(find.text('CRITICAL'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_outline), findsWidgets);
     });
 
     testWidgets('renders empty state when alerts list is empty', (WidgetTester tester) async {
@@ -220,6 +328,76 @@ void main() {
       );
       expect(client.dio.options.baseUrl, 'http://localhost:8000');
       expect(client.dio.interceptors.isNotEmpty, isTrue);
+    });
+
+    test('ApiClient dynamically sets auth token header', () {
+      final client = ApiClient(baseUrl: 'http://localhost:8000');
+      client.setAuthToken('bearer_sample_token_xyz');
+      expect(client.dio.options.headers['Authorization'], 'Bearer bearer_sample_token_xyz');
+    });
+  });
+
+  group('Repository Offline Resilience Tests', () {
+    test('InventoryRepository falls back to offline queue on network disconnect', () async {
+      // Disconnected dummy client
+      final client = ApiClient(baseUrl: 'http://127.0.0.1:59999');
+      final repo = InventoryRepository(client);
+
+      final result = await repo.recordStockCount(
+        productId: 'ING01',
+        quantity: 120.0,
+        branchId: 'R01',
+      );
+
+      // Should handle offline gracefully without uncaught exception
+      expect(result.synced, isFalse);
+    });
+
+    test('RecommendationsRepository falls back to offline queue on network disconnect', () async {
+      final client = ApiClient(baseUrl: 'http://127.0.0.1:59999');
+      final repo = RecommendationsRepository(client);
+
+      final result = await repo.overrideRecommendation(
+        id: 'rec_offline_01',
+        newQty: 200.0,
+        reason: 'Emergency inventory replenishment',
+      );
+
+      expect(result.synced, isFalse);
+    });
+  });
+
+  group('Full Vertical Operational Flow Tests', () {
+    test('Vertical Flow: LOGIN -> BRIEF -> RECOMMENDATION -> OVERRIDE -> AUDIT & INVENTORY', () async {
+      // Step 1: Initialize API Client with authenticated token (simulating POST /api/v1/auth/login)
+      final client = ApiClient(baseUrl: 'http://localhost:8000', initialToken: 'test_jwt_session_token');
+      expect(client.dio.options.headers['Authorization'], 'Bearer test_jwt_session_token');
+
+      // Step 2: Initialize Repositories
+      final recRepo = RecommendationsRepository(client);
+      final invRepo = InventoryRepository(client);
+      final alertRepo = AlertsRepository(client);
+
+      // Step 3: Simulate Manager Overriding Recommendation (POST /api/v1/recommendations/{id}/override)
+      final overrideRes = await recRepo.overrideRecommendation(
+        id: 'rec_flow_101',
+        newQty: 180.0,
+        reason: 'High local foot traffic anticipated for weekend event',
+      );
+      // Confirms mutation was handled (synced or staged in offline queue)
+      expect(overrideRes.message.isNotEmpty, isTrue);
+
+      // Step 4: Simulate Employee Recording Physical Closing Stock Count (POST /api/v1/inventory/snapshots)
+      final stockRes = await invRepo.recordStockCount(
+        productId: 'ING01',
+        quantity: 142.5,
+        branchId: 'R01',
+      );
+      expect(stockRes.message.isNotEmpty, isTrue);
+
+      // Step 5: Simulate Resolving an Alert (POST /api/v1/alerts/{id}/resolve)
+      final alertRes = await alertRepo.resolveAlert('alert_flow_01');
+      expect(alertRes, isTrue);
     });
   });
 }

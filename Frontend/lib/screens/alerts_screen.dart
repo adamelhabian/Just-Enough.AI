@@ -61,12 +61,12 @@ class AlertsScreen extends ConsumerWidget {
   }
 }
 
-class _AlertCard extends StatelessWidget {
+class _AlertCard extends ConsumerWidget {
   final Alert alert;
   const _AlertCard({required this.alert});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final color = switch (alert.severity) {
       AlertSeverity.critical => Colors.red,
       AlertSeverity.warning => Colors.orange,
@@ -116,6 +116,25 @@ class _AlertCard extends StatelessWidget {
             ),
           ],
         ),
+        trailing: alert.status == AlertStatus.resolved
+            ? const Chip(label: Text('RESOLVED', style: TextStyle(fontSize: 10, color: Colors.green)))
+            : IconButton(
+                icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                tooltip: 'Resolve alert',
+                onPressed: () async {
+                  final repo = ref.read(alertsRepositoryProvider);
+                  final ok = await repo.resolveAlert(alert.id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok ? 'Alert marked as resolved' : 'Failed to resolve alert'),
+                        backgroundColor: ok ? Colors.green[700] : Colors.red,
+                      ),
+                    );
+                    ref.invalidate(alertsProvider);
+                  }
+                },
+              ),
         isThreeLine: true,
       ),
     );

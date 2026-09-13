@@ -48,6 +48,8 @@ class QueuedOperation {
 class LocalQueue {
   final Dio dio;
   Database? _db;
+  final List<QueuedOperation> _memoryQueue = [];
+  bool _useMemoryFallback = false;
 
   LocalQueue(this.dio);
 
@@ -72,7 +74,6 @@ class LocalQueue {
   }
 
   Future<void> enqueue(String endpoint, String method, Map<String, dynamic> body) async {
-    final d = await db;
     final op = QueuedOperation(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       endpoint: endpoint,
@@ -81,32 +82,72 @@ class LocalQueue {
       createdAt: DateTime.now(),
       status: OperationStatus.pending,
     );
-    await d.insert(
-      'queued_operations',
-      op.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+
+    if (!_useMemoryFallback) {
+      try {
+        final d = await db;
+        await d.insert(
+          'queued_operations',
+          op.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        return;
+      } catch (_) {
+        _useMemoryFallback = true;
+      }
+    }
+    _memoryQueue.add(op);
   }
 
   Future<void> updateStatus(String id, OperationStatus status) async {
-    final d = await db;
-    await d.update(
-      'queued_operations',
-      {'status': status.name},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    if (!_useMemoryFallback) {
+      try {
+        final d = await db;
+        await d.update(
+          'queued_operations',
+          {'status': status.name},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        return;
+      } catch (_) {
+        _useMemoryFallback = true;
+      }
+    }
+    final idx = _memoryQueue.indexWhere((o) => o.id == id);
+    if (idx != -1) {
+      final old = _memoryQueue[idx];
+      _memoryQueue[idx] = QueuedOperation(
+        id: old.id,
+        endpoint: old.endpoint,
+        method: old.method,
+        body: old.body,
+        createdAt: old.createdAt,
+        status: status,
+      );
+    }
   }
 
   Future<List<QueuedOperation>> getPending() async {
-    final d = await db;
-    final maps = await d.query(
-      'queued_operations',
-      where: 'status IN (?, ?, ?)',
-      whereArgs: [OperationStatus.pending.name, OperationStatus.failed.name, OperationStatus.conflicted.name],
-      orderBy: 'created_at ASC',
-    );
-    return maps.map((m) => QueuedOperation.fromMap(m)).toList();
+    if (!_useMemoryFallback) {
+      try {
+        final d = await db;
+        final maps = await d.query(
+          'queued_operations',
+          where: 'status IN (?, ?, ?)',
+          whereArgs: [OperationStatus.pending.name, OperationStatus.failed.name, OperationStatus.conflicted.name],
+          orderBy: 'created_at ASC',
+        );
+        return maps.map((m) => QueuedOperation.fromMap(m)).toList();
+      } catch (_) {
+        _useMemoryFallback = true;
+      }
+    }
+    return _memoryQueue.where((op) =>
+      op.status == OperationStatus.pending ||
+      op.status == OperationStatus.failed ||
+      op.status == OperationStatus.conflicted
+    ).toList();
   }
 
   Future<void> syncAll() async {

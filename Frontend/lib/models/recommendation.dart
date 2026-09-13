@@ -18,6 +18,8 @@ class Recommendation {
   final String explanation;
   final DateTime createdAt;
 
+  final String? overrideReason;
+
   Recommendation({
     required this.id,
     required this.productName,
@@ -31,22 +33,65 @@ class Recommendation {
     required this.severity,
     required this.explanation,
     required this.createdAt,
+    this.overrideReason,
   });
 
+  static RecommendationStatus _parseStatus(dynamic value) {
+    if (value == null) return RecommendationStatus.normal;
+    final s = value.toString().toLowerCase();
+    if (s.contains('shortage')) return RecommendationStatus.shortage;
+    if (s.contains('waste')) return RecommendationStatus.waste;
+    return RecommendationStatus.values.firstWhere(
+      (e) => e.name.toLowerCase() == s,
+      orElse: () => RecommendationStatus.normal,
+    );
+  }
+
+  static RecommendationSeverity _parseSeverity(dynamic value) {
+    if (value == null) return RecommendationSeverity.info;
+    final s = value.toString().toUpperCase();
+    if (s == 'CRITICAL' || s == 'HIGH') return RecommendationSeverity.critical;
+    if (s == 'WARNING' || s == 'MEDIUM') return RecommendationSeverity.warning;
+    if (s == 'INFO' || s == 'LOW') return RecommendationSeverity.info;
+    return RecommendationSeverity.values.firstWhere(
+      (e) => e.name.toUpperCase() == s,
+      orElse: () => RecommendationSeverity.info,
+    );
+  }
+
   factory Recommendation.fromJson(Map<String, dynamic> json) {
+    final prodName = json['productName'] as String? ??
+        json['product_name'] as String? ??
+        json['product_id'] as String? ??
+        'Product';
+    final prodId = json['productId'] as String? ??
+        json['product_id'] as String? ??
+        '';
+    final brId = json['branchId'] as String? ??
+        json['branch_id'] as String? ??
+        '';
+    final qty = (json['recommendedQty'] ?? json['recommended_qty'] as num?)?.toDouble() ?? 0.0;
+    final currInv = (json['currentInventory'] ?? json['current_inventory'] as num?)?.toDouble() ?? 0.0;
+    final forecast = (json['forecastDemand'] ?? json['forecast_demand'] as num?)?.toDouble() ?? 0.0;
+    final safety = (json['safetyStock'] ?? json['safety_stock'] as num?)?.toDouble() ?? 0.0;
+    final expl = json['explanation'] as String? ?? '';
+    final dateStr = json['createdAt'] as String? ?? json['target_date'] as String?;
+    final dt = dateStr != null ? DateTime.tryParse(dateStr) ?? DateTime.now() : DateTime.now();
+
     return Recommendation(
-      id: json['id'] as String,
-      productName: json['productName'] as String,
-      productId: json['productId'] as String,
-      branchId: json['branchId'] as String,
-      recommendedQty: (json['recommendedQty'] as num).toDouble(),
-      currentInventory: (json['currentInventory'] as num).toDouble(),
-      forecastDemand: (json['forecastDemand'] as num).toDouble(),
-      safetyStock: (json['safetyStock'] as num).toDouble(),
-      status: RecommendationStatus.values.firstWhere((e) => e.name == json['status']),
-      severity: RecommendationSeverity.values.firstWhere((e) => e.name == json['severity']),
-      explanation: json['explanation'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      id: json['id'] as String? ?? '',
+      productName: prodName,
+      productId: prodId,
+      branchId: brId,
+      recommendedQty: qty,
+      currentInventory: currInv,
+      forecastDemand: forecast,
+      safetyStock: safety,
+      status: _parseStatus(json['status']),
+      severity: _parseSeverity(json['severity'] ?? json['risk']),
+      explanation: expl,
+      createdAt: dt,
+      overrideReason: json['override_reason'] as String?,
     );
   }
 
@@ -64,6 +109,7 @@ class Recommendation {
       'severity': severity.name,
       'explanation': explanation,
       'createdAt': createdAt.toIso8601String(),
+      'override_reason': overrideReason,
     };
   }
 

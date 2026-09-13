@@ -1,5 +1,10 @@
 import 'dart:developer';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient();
+});
 
 class ApiError implements Exception {
   final String message;
@@ -14,10 +19,14 @@ class ApiClient {
 
   ApiClient({String? baseUrl, String? initialToken}) {
     dio = Dio(BaseOptions(
-      baseUrl: baseUrl ?? const String.fromEnvironment('API_BASE_URL', defaultValue: 'https://api.justenough.example.com'),
+      baseUrl: baseUrl ?? const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000'),
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 30),
     ));
+
+    if (initialToken != null && initialToken.isNotEmpty) {
+      dio.options.headers['Authorization'] = 'Bearer $initialToken';
+    }
 
     // Auth Interceptor
     dio.interceptors.add(InterceptorsWrapper(
@@ -89,5 +98,9 @@ class ApiClient {
       responseBody: true,
       logPrint: (obj) => log(obj.toString()),
     ));
+  }
+
+  void setAuthToken(String token) {
+    dio.options.headers['Authorization'] = 'Bearer $token';
   }
 }
