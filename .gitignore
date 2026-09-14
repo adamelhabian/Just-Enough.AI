@@ -24,3 +24,7 @@ Thumbs.db
 
 # Artifacts
 .artifacts/
+
+*.db
+.coverage
+
