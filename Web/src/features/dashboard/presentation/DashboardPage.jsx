@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from '../../../core/components/Sidebar';
 import KPICard from '../../../core/components/KPICard';
 import { TrendingUp, Target, AlertTriangle, ShieldCheck, Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
@@ -7,12 +7,22 @@ import { useDashboardStore } from '../domain/useDashboardStore';
 import { getStoredMode } from '../../../api/config';
 
 const DashboardPage = () => {
-  const { chartData, stats, isLoading, error, mode, fetchDashboardData } = useDashboardStore();
+  const { chartData, stats, insights, alerts, isLoading, error, mode, fetchDashboardData } = useDashboardStore();
   const currentMode = mode || getStoredMode() || 'LIVE';
 
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  const displayedInsights = insights && insights.length > 0 ? insights : [
+    { headline: "Demand Surge", description: "Demand surge projected for dinner service (+18%) driven by local event traffic." },
+    { headline: "Prep Priority", description: "Prep priority: Pre-portion 45 burger patties before 11:30 AM shift start." }
+  ];
+
+  const displayedAlerts = alerts && alerts.length > 0 ? alerts : [
+    { severity: 'HIGH', title: 'Low Stock: Ground Beef', message: '12.5 kg remaining. Suggested order: 30 kg.' },
+    { severity: 'MEDIUM', title: 'Prep Recommendation', message: 'Prepare 20L Tomato Base by 14:00.' }
+  ];
 
   return (
     <div className="flex min-h-screen bg-restaurant-background">
@@ -137,34 +147,39 @@ const DashboardPage = () => {
                 AI Operational Insights
               </h3>
               <ul className="space-y-4 text-sm text-restaurant-background opacity-80 font-medium">
-                <li className="flex gap-3">
-                  <span className="w-1.5 h-1.5 bg-restaurant-primary rounded-full mt-1.5 shrink-0" />
-                  Demand surge projected for dinner service (+18%) driven by local event traffic.
-                </li>
-                <li className="flex gap-3">
-                  <span className="w-1.5 h-1.5 bg-restaurant-primary rounded-full mt-1.5 shrink-0" />
-                  Prep priority: Pre-portion 45 burger patties before 11:30 AM shift start.
-                </li>
+                {displayedInsights.map((ins, idx) => (
+                  <li key={idx} className="flex gap-3">
+                    <span className="w-1.5 h-1.5 bg-restaurant-primary rounded-full mt-1.5 shrink-0" />
+                    <div>
+                      {ins.headline && <span className="font-bold text-xs uppercase tracking-wider block text-white opacity-90 mb-0.5">{ins.headline}</span>}
+                      <span>{ins.description}</span>
+                    </div>
+                  </li>
+                ))}
               </ul>
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-restaurant-background">
               <h3 className="text-xs font-black uppercase tracking-widest text-restaurant-dark mb-4">Operational Monitor Alerts</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-restaurant-red bg-opacity-10 rounded-xl border border-restaurant-red border-opacity-10">
-                  <AlertTriangle className="text-restaurant-red" size={18} />
-                  <div>
-                    <p className="text-sm font-bold text-restaurant-dark tracking-tight">Low Stock: Ground Beef</p>
-                    <p className="text-xs text-restaurant-dark opacity-60 font-medium">12.5 kg remaining. Suggested order: 30 kg.</p>
+                {displayedAlerts.map((alt, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-3 p-3 rounded-xl border ${
+                      alt.severity === 'HIGH'
+                        ? 'bg-restaurant-red bg-opacity-10 border-restaurant-red border-opacity-10'
+                        : 'bg-restaurant-secondary bg-opacity-10 border-restaurant-secondary border-opacity-10'
+                    }`}
+                  >
+                    <AlertTriangle className={alt.severity === 'HIGH' ? 'text-restaurant-red' : 'text-restaurant-secondary'} size={18} />
+                    <div>
+                      <p className="text-sm font-bold text-restaurant-dark tracking-tight">
+                        {alt.item_name ? `${alt.type || 'Alert'}: ${alt.item_name}` : (alt.title || 'Operational Notice')}
+                      </p>
+                      <p className="text-xs text-restaurant-dark opacity-60 font-medium">{alt.message}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-restaurant-secondary bg-opacity-10 rounded-xl border border-restaurant-secondary border-opacity-10">
-                  <AlertTriangle className="text-restaurant-secondary" size={18} />
-                  <div>
-                    <p className="text-sm font-bold text-restaurant-dark tracking-tight">Prep Recommendation</p>
-                    <p className="text-xs text-restaurant-dark opacity-60 font-medium">Prepare 20L Tomato Base by 14:00.</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>

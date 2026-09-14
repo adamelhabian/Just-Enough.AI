@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.errors import global_exception_handler, APIError
 from app.core.middleware import RequestIDMiddleware, LoggingMiddleware, TenantContextMiddleware
-from app.api.v1 import auth, health, sales, inventory, alerts, ingestion, forecasts, recommendations
+from app.api.v1 import auth, health, sales, inventory, alerts, ingestion, forecasts, recommendations, morning_brief
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -19,11 +19,13 @@ async def lifespan(app: FastAPI):
         CanonicalBase.metadata.create_all(bind=engine)
         
         with SessionLocal() as db:
-            if not db.query(User).filter(User.email == "admin@justenough.local").first():
+            demo_email = settings.DEMO_ADMIN_EMAIL
+            demo_pass = settings.DEMO_ADMIN_PASSWORD
+            if not db.query(User).filter(User.email == demo_email).first():
                 demo_user = User(
                     id="user-mvp-admin-01",
-                    email="admin@justenough.local",
-                    hashed_password=hash_password("AdminSecret123!"),
+                    email=demo_email,
+                    hashed_password=hash_password(demo_pass),
                     role="manager",
                     tenant_id="tenant-demo-1",
                     full_name="Restaurant General Manager",
@@ -73,7 +75,8 @@ async def lifespan(app: FastAPI):
                 db.add_all(demo_recs)
                 db.commit()
     except Exception as e:
-        pass
+        import logging
+        logging.getLogger("app.main").warning(f"Lifespan initialization warning: {e}")
     yield
 
 
@@ -108,6 +111,7 @@ app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
 app.include_router(ingestion.router, prefix="/api/v1", tags=["ingestion"])
 app.include_router(forecasts.router, prefix="/api/v1", tags=["forecasts"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
+app.include_router(morning_brief.router, prefix="/api/v1", tags=["morning-brief"])
 
 # Serve React SPA production build
 import os

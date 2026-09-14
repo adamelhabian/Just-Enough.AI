@@ -1,4 +1,4 @@
-﻿import os
+import os
 import urllib.parse
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,6 +9,8 @@ def get_default_database_url() -> str:
     # Default is always standalone local SQLite for zero-setup evaluation.
     if os.environ.get("FORCE_POSTGRES") == "1" and os.environ.get("DATABASE_URL"):
         return os.environ["DATABASE_URL"]
+    if os.environ.get("VERCEL"):
+        return "sqlite:////tmp/justenough_mvp.db"
     return "sqlite:///./justenough_mvp.db"
 
 class Settings(BaseSettings):
@@ -22,6 +24,14 @@ class Settings(BaseSettings):
     APP_NAME: str = "JustEnough API"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
+    DEMO_ADMIN_EMAIL: str = os.getenv("DEMO_ADMIN_EMAIL", "admin@justenough.local")
+    DEMO_ADMIN_PASSWORD: str = os.getenv("DEMO_ADMIN_PASSWORD", "AdminSecret123!")
+
+    @model_validator(mode="after")
+    def validate_production_secret(self):
+        if self.ENVIRONMENT == "production" and self.SECRET_KEY in ("supersecretkey", "default_secret_key_change_in_production"):
+            raise ValueError("SECRET_KEY must be set to a secure unique value when ENVIRONMENT=production")
+        return self
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

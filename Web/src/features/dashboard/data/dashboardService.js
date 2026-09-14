@@ -1,4 +1,4 @@
-﻿import { apiClient } from '../../../api/client';
+import { apiClient } from '../../../api/client';
 import { getStoredMode } from '../../../api/config';
 
 export const getDashboardMockData = () => {
@@ -28,28 +28,64 @@ export const fetchLiveDashboard = async () => {
     return {
       chartData: getDashboardMockData(),
       stats: getDashboardStats(),
+      insights: [
+        { headline: "Demand Surge", description: "Demand surge projected for dinner service (+18%) driven by local event traffic." },
+        { headline: "Prep Priority", description: "Prep priority: Pre-portion 45 burger patties before 11:30 AM shift start." }
+      ],
+      alerts: [
+        { severity: 'HIGH', item_name: 'Ground Beef', message: '12.5 kg remaining. Suggested order: 30 kg.' },
+        { severity: 'MEDIUM', item_name: 'Tomato Base', message: 'Prepare 20L Tomato Base by 14:00.' }
+      ],
       mode: 'DEMO / SYNTHETIC'
     };
   }
 
-  // LIVE mode
-  const fRes = await apiClient('/api/v1/forecasts');
+  // LIVE mode — query real backend morning-brief and forecasts
   let chart = getDashboardMockData();
-  if (fRes && fRes.data && fRes.data.length > 0) {
-    chart = fRes.data.slice(0, 7).map(item => ({
-      name: item.business_date ? item.business_date.slice(5) : 'Day',
-      demand: Math.round(item.p50),
-      forecast: Math.round(item.p50 * 0.98)
-    }));
+  let stats = {
+    predictedDemand: "140 Units",
+    accuracy: "95.1%",
+    wasteRisk: "Low (4.2%)",
+    stockCoverage: "4.5 Days"
+  };
+  let insights = [];
+  let alerts = [];
+
+  try {
+    const mbRes = await apiClient('/api/v1/morning-brief');
+    if (mbRes && mbRes.summary) {
+      stats = {
+        predictedDemand: `${mbRes.summary.predicted_demand || 140} Units`,
+        accuracy: mbRes.summary.accuracy || "95.1%",
+        wasteRisk: String(mbRes.summary.waste_risk || "Low (4.2%)"),
+        stockCoverage: `${mbRes.summary.stock_coverage_days || 4.5} Days`
+      };
+      insights = mbRes.ai_insights || [];
+      alerts = mbRes.alerts || [];
+    }
+  } catch (err) {
+    console.warn("Could not fetch real morning brief:", err);
   }
+
+  try {
+    const fRes = await apiClient('/api/v1/forecasts');
+    if (fRes && fRes.data && fRes.data.length > 0) {
+      chart = fRes.data.slice(0, 7).map(item => ({
+        name: item.business_date ? item.business_date.slice(5) : 'Day',
+        demand: Math.round(item.p50),
+        forecast: Math.round(item.p50 * 0.98)
+      }));
+    }
+  } catch (err) {
+    console.warn("Could not fetch forecasts for chart:", err);
+  }
+
   return {
     chartData: chart,
-    stats: {
-      predictedDemand: "1,420 Units",
-      accuracy: "95.1%",
-      wasteRisk: "Low",
-      stockCoverage: "5.2 Days"
-    },
+    stats,
+    insights,
+    alerts,
     mode: 'LIVE'
   };
 };
+

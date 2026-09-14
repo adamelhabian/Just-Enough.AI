@@ -169,8 +169,8 @@ export const InventoryPage = () => {
         {orderSuccess ? (
           <div style={{ textAlign: 'center', padding: '2rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <CheckCircle2 size={48} color="var(--emerald)" />
-            <h4>Order Confirmed</h4>
-            <p style={{ color: 'var(--text-muted)' }}>Purchase order sent directly to supplier. Expected delivery tomorrow 07:00 AM.</p>
+            <h4>Order Recommendation Recorded</h4>
+            <p style={{ color: 'var(--text-muted)' }}>Order recommendation confirmed. Procurement recommendation prepared for purchasing review.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -192,7 +192,7 @@ export const InventoryPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
               <Button variant="ghost" onClick={() => setActiveModalItem(null)}>Cancel</Button>
-              <Button variant="primary" icon={ShoppingBag} onClick={handleConfirmOrder}>Confirm Purchase Order</Button>
+              <Button variant="primary" icon={ShoppingBag} onClick={handleConfirmOrder}>Confirm Order Recommendation</Button>
             </div>
           </div>
         )}

@@ -24,22 +24,39 @@ if ML_DIR.exists() and str(ML_DIR) not in sys.path:
 
 try:
     from just_enough_ml.inference.forecast import forecast_next_7_days, MODEL_CONFIG
-    from just_enough_ml.inference.predict import get_model_info
+    from just_enough_ml.inference.predict import get_model_info, MODEL
     ML_AVAILABLE = True
-except ImportError as e:
+    ML_IMPORT_ERROR = None
+except Exception as e:
     logger.warning(f"just_enough_ml could not be imported: {e}. Fallback mode active.")
     ML_AVAILABLE = False
+    ML_IMPORT_ERROR = str(e)
+    MODEL = None
+    MODEL_CONFIG = {"model_name": "LightGBM-Fallback", "features": [f"f_{i}" for i in range(52)], "forecast_horizon_days": 7}
 
 
 class MLForecastAdapter:
     """Adapter bridging Backend database state with upstream ML 7-day demand forecasting."""
 
     def __init__(self):
-        self.model_info = get_model_info() if ML_AVAILABLE else {
-            "model_name": "LightGBM-Fallback",
-            "forecast_horizon_days": 7,
-            "number_of_features": 52
-        }
+        if ML_AVAILABLE and MODEL is not None:
+            self.model_mode = "TRAINED_MODEL"
+            self.status = "ready"
+            self.model_info = get_model_info()
+        else:
+            self.model_mode = "FALLBACK_HEURISTIC"
+            self.status = "degraded"
+            self.model_info = {
+                "model_name": "LightGBM-Fallback",
+                "target": "quantity",
+                "forecast_horizon_days": 7,
+                "number_of_features": 52,
+                "error": ML_IMPORT_ERROR
+            }
+
+    @property
+    def is_ready(self) -> bool:
+        return self.status == "ready"
 
     def run_7day_forecast(
         self,
@@ -137,13 +154,22 @@ class MLForecastAdapter:
         # Convert back to clean serializable dict
         results = []
         for _, row in forecast_df.iterrows():
+            pred_qty = max(0.0, float(row["predicted_quantity"]))
+            rec_qty = max(0, int(row["recommended_quantity"]))
+            p10 = round(max(0.0, pred_qty * 0.85), 2)
+            p50 = round(pred_qty, 2)
+            p90 = round(pred_qty * 1.15, 2)
             results.append({
                 "date": str(pd.to_datetime(row["date"]).date()),
                 "restaurant_id": str(row["restaurant_id"]),
                 "menu_item_id": str(row["menu_item_id"]),
                 "menu_item_name": str(row["menu_item_name"]),
-                "predicted_quantity": float(row["predicted_quantity"]),
-                "recommended_quantity": int(row["recommended_quantity"])
+                "predicted_quantity": pred_qty,
+                "recommended_quantity": rec_qty,
+                "p10": p10,
+                "p50": p50,
+                "p90": p90,
+                "model_mode": self.model_mode
             })
         return results
 
