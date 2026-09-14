@@ -1,0 +1,197 @@
+{
+  "info": {
+    "name": "JustEnough Functional MVP API Collection (V6.1)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman API Collection for JustEnough Functional MVP covering Auth, 7-Day LightGBM Demand Forecasting, Recipe/BOM Planning, Recommendations (Prepare, Order, Monitor, Alert), Overrides, and Sales Ingestion."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/health"
+      }
+    },
+    {
+      "name": "02 - Branch Manager Login",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "manager@justenough.ai"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "03 - Trigger 7-Day ML Demand Forecast",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branch_id\": \"R01\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/forecasts/trigger-7day"
+      }
+    },
+    {
+      "name": "04 - List 7-Day Forecasts",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/forecasts?branch_id=R01"
+      }
+    },
+    {
+      "name": "05 - List Operational Recommendations",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/recommendations?branch_id=R01"
+      }
+    },
+    {
+      "name": "06 - Explain Recommendation Drivers",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/recommendations/{{recommendationId}}/explain"
+      }
+    },
+    {
+      "name": "07 - Manager Override Recommendation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recommended_qty\": 75.0,\n  \"override_reason\": \"Expected catering party spike for weekend\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/recommendations/{{recommendationId}}/override"
+      }
+    },
+    {
+      "name": "08 - List Operational Alerts",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/alerts?branch_id=R01"
+      }
+    },
+    {
+      "name": "09 - List Inventory Snapshots",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/inventory/snapshots?branch_id=R01"
+      }
+    },
+    {
+      "name": "10 - Record Closing Stock Snapshot",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"branch_id\": \"R01\",\n  \"product_id\": \"ING01\",\n  \"snapshot_date\": \"2026-09-12\",\n  \"quantity\": 142.0\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/inventory/snapshots"
+      }
+    },
+    {
+      "name": "11 - Ingest Sales CSV",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/ingestion/sales-csv"
+      }
+    }
+  ]
+}

@@ -1,21 +1,25 @@
 import { create } from 'zustand';
-import { getDashboardMockData, getDashboardStats } from '../data/dashboardService';
+import { fetchLiveDashboard } from '../data/dashboardService';
 
 export const useDashboardStore = create((set) => ({
   chartData: [],
   stats: null,
+  insights: [],
+  alerts: [],
   isLoading: false,
   error: null,
+  mode: 'LIVE',
 
   fetchDashboardData: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
-      // Simulate API call
-      const data = getDashboardMockData();
-      const stats = getDashboardStats();
-      set({ chartData: data, stats, isLoading: false });
+      const { chartData, stats, insights, alerts, mode } = await fetchLiveDashboard();
+      set({ chartData, stats, insights, alerts, mode, isLoading: false, error: null });
     } catch (err) {
-      set({ error: 'Failed to load dashboard data', isLoading: false });
+      set({
+        error: err.message || 'SERVICE UNAVAILABLE: Backend demand engine offline.',
+        isLoading: false
+      });
     }
   }
 }));

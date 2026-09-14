@@ -1,0 +1,6 @@
+from abc import ABC, abstractmethod
+class ERPAdapter(ABC):
+    @abstractmethod
+    async def fetch_sales(self,since_iso:str)->list[dict]: ...
+    @abstractmethod
+    async def fetch_products(self)->list[dict]: ...

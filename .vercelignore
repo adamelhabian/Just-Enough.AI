@@ -1,0 +1,25 @@
+# Vercel deployment exclusions — Lean runtime bundle
+99_SUBMISSION_JUSTENOUGH/
+screenshots/
+*.pdf
+*.csv
+docker/
+scripts/
+src/
+WebVanilla/
+ML/notebooks/
+Backend/tests/
+ML/tests/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.coverage
+htmlcov/
+*.db
+.env
+.env.local
+.venv/
+venv/
+requirements-dev.txt

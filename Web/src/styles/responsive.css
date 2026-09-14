@@ -1,0 +1,55 @@
+/* Media Queries and Mobile Layout Adaptations */
+
+@media (max-width: 1024px) {
+  h1 { font-size: 2.5rem; }
+  h2 { font-size: 1.85rem; }
+  
+  .container {
+    padding: 0 var(--space-md);
+  }
+
+  .grid-2 { grid-template-columns: 1fr !important; }
+  .grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 768px) {
+  h1 { font-size: 2.1rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+
+  .section-padding {
+    padding: var(--space-xl) 0;
+  }
+
+  .grid-3, .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Table to Card view fallback helper */
+  .responsive-table-container {
+    overflow-x: auto;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.75rem; }
+  
+  .btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-group button, .btn-group a {
+    width: 100%;
+    text-align: center;
+  }
+}
