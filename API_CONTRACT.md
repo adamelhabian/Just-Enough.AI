@@ -41,7 +41,7 @@ All operational endpoints require a Bearer JWT token in the `Authorization` head
   "branch_id": "branch-101",
   "summary": {
     "predicted_demand": 140,
-    "accuracy": "95.1%",
+    "accuracy": "94.8%",
     "stock_coverage_days": 4.5,
     "waste_risk": "Low (4.2%)",
     "items_at_risk": 3

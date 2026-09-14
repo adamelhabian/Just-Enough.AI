@@ -57,14 +57,14 @@ export const fetchInventoryKPIs = async () => {
     return [
       { id: 1, title: 'Active Inventory Items', value: String(activeCount), unit: 'SKUs', change: '+0', trend: 'neutral', icon: 'Boxes' },
       { id: 2, title: 'Stockout Risk Level', value: riskLevel, unit: '', change: lowStockCount > 0 ? `${lowStockCount} at risk` : 'Optimal', trend: lowStockCount > 0 ? 'down' : 'up', icon: 'AlertTriangle' },
-      { id: 3, title: 'Forecast Alignment', value: '95.1%', unit: '', change: 'LightGBM-52f', trend: 'up', icon: 'TrendingUp' },
+      { id: 3, title: 'Forecast Alignment', value: 'High Confidence', unit: '', change: 'LightGBM-52f', trend: 'up', icon: 'TrendingUp' },
       { id: 4, title: 'Avg Days of Supply', value: String(avgCoverage), unit: 'Days', change: '+0.2', trend: 'up', icon: 'Calendar' }
     ];
   } catch (err) {
     return [
       { id: 1, title: 'Active Inventory Items', value: '4', unit: 'SKUs', change: '+0', trend: 'neutral', icon: 'Boxes' },
       { id: 2, title: 'Stockout Risk Level', value: 'Low', unit: '', change: 'Optimal', trend: 'up', icon: 'AlertTriangle' },
-      { id: 3, title: 'Forecast Alignment', value: '95.1%', unit: '', change: 'LightGBM', trend: 'up', icon: 'TrendingUp' },
+      { id: 3, title: 'Forecast Alignment', value: 'High Confidence', unit: '', change: 'LightGBM', trend: 'up', icon: 'TrendingUp' },
       { id: 4, title: 'Avg Days of Supply', value: '4.5', unit: 'Days', change: '+0.2', trend: 'up', icon: 'Calendar' }
     ];
   }

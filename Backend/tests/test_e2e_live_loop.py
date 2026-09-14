@@ -13,6 +13,21 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_real_db():
+    Base.metadata.create_all(bind=engine)
+    CanonicalBase.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        if not db.query(User).filter(User.email == 'admin@justenough.local').first():
+            demo_user = User(
+                id="user-mvp-admin-01",
+                email="admin@justenough.local",
+                hashed_password=hash_password("AdminSecret123!"),
+                role="manager",
+                tenant_id="tenant-demo-1",
+                full_name="Restaurant General Manager",
+                is_active=True
+            )
+            db.add(demo_user)
+            db.commit()
     app.dependency_overrides.pop(get_db, None)
     yield
 

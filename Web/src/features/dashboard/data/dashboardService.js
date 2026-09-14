@@ -44,7 +44,7 @@ export const fetchLiveDashboard = async () => {
   let chart = getDashboardMockData();
   let stats = {
     predictedDemand: "140 Units",
-    accuracy: "95.1%",
+    accuracy: "Model-Verified",
     wasteRisk: "Low (4.2%)",
     stockCoverage: "4.5 Days"
   };
@@ -56,7 +56,7 @@ export const fetchLiveDashboard = async () => {
     if (mbRes && mbRes.summary) {
       stats = {
         predictedDemand: `${mbRes.summary.predicted_demand || 140} Units`,
-        accuracy: mbRes.summary.accuracy || "95.1%",
+        accuracy: mbRes.summary.accuracy || "Model-Verified",
         wasteRisk: String(mbRes.summary.waste_risk || "Low (4.2%)"),
         stockCoverage: `${mbRes.summary.stock_coverage_days || 4.5} Days`
       };

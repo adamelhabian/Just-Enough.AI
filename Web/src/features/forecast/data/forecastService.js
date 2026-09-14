@@ -83,7 +83,7 @@ export const fetchRealForecast = async (product = 'All Products') => {
       impactFactors: [
         { type: 'Weather', val: 'Clear & Warm (22°C)', impact: '+8% Lunch Demand', icon: 'sun' },
         { type: 'Day Pattern', val: 'Weekend Dinner Rush', impact: '+25% Dinner Volume', icon: 'calendar' },
-        { type: 'ML Confidence', val: 'LightGBM 52 Features', impact: '95.1% Accuracy', icon: 'users' }
+        { type: 'ML Confidence', val: 'LightGBM 52 Features', impact: 'Active Model', icon: 'users' }
       ],
       mode: 'LIVE'
     };
