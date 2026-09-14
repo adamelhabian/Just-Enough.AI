@@ -19,16 +19,16 @@
                     |                               |
                     v                               v
 +-----------------------------------+   +-------------------------------+
-|      Zero-DB SQLite Engine        |   |      LightGBM ML Engine       |
+|    Standalone Embedded SQLite     |   |      LightGBM ML Engine       |
 |  - DB: justenough_mvp.db (Local)  |   |  - 52 Engineered Features     |
-|  - Auto-created Lifespan Tables   |   |  - Monotonic Quantiles (P10,  |
-|  - Immutable AuditLog & Snapshots |   |    P50, P90)                  |
+|  - Zero External Database Setup   |   |  - Monotonic Quantiles (P10,  |
+|  - AuditLog & Inventory Snapshots |   |    P50, P90)                  |
 +-----------------------------------+   +-------------------------------+
 ```
 
 ---
 
-## 2. Zero-Database Data Contracts
+## 2. Standalone SQLite Mode Data Contracts
 
 ### A. Authentication Contract
 - **POST `/api/v1/auth/login`**

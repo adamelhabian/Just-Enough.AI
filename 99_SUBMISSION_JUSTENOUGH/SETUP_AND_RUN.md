@@ -7,7 +7,7 @@ Follow these simple steps to run the complete JustEnough MVP on any machine with
 ## Prerequisites
 - **Python:** 3.11, 3.12, or 3.13 (`python --version`)
 - **Node.js:** 18+ (`node --version`)
-- **No Docker or PostgreSQL required!** The application boots directly using a local standalone SQLite file.
+- **Zero External Database Setup:** The application operates in standalone embedded SQLite mode using a local file (`justenough_mvp.db`). No PostgreSQL, Docker, or Neon instances are required.
 
 ---
 
@@ -47,4 +47,4 @@ npm run dev -- --port 3000
 ## Evaluator Credentials
 - **Email:** `admin@justenough.local`
 - **Password:** `AdminSecret123!`
-- **Data Mode:** `LIVE` (Default selected)
+- **Data Mode:** `MVP API / Sample Data` (Selected as LIVE in UI to connect frontend to real FastAPI backend rather than mocks)

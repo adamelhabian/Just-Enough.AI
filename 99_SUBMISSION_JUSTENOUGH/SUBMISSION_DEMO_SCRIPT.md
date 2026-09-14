@@ -3,7 +3,7 @@
 ### Act 1: Authentication & Landing (1 Minute)
 1. Launch the application and visit `http://127.0.0.1:3000/login`.
 2. Observe pre-filled credentials: `admin@justenough.local` / `AdminSecret123!`.
-3. Keep Data Mode set to **LIVE** (default). Click **Sign In**.
+3. Keep Data Mode set to **LIVE** (connecting to the real FastAPI backend with sample restaurant data). Click **Sign In**.
 
 ### Act 2: Morning Brief & Quantile Demand Forecast (1 Minute)
 1. The Dashboard renders the **Morning Brief** with today's projected covers and peak service buffer.
