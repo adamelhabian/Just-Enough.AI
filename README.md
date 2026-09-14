@@ -11,8 +11,8 @@ The system uses historical restaurant sales data and future business context to 
 The project is divided into three main components:
 
 - **ML** — Demand forecasting and AI intelligence
+- **Web** — React-based restaurant dashboard and user interface (Clean Architecture)
 - **Backend** — Data, APIs, ERP/POS integration, and business logic
-- **Frontend** — Restaurant dashboard and user interface
 
 ---
 
