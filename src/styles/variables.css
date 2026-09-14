@@ -1,0 +1,88 @@
+:root {
+  /* Brand Color Palette */
+  --terracotta: #B94419;
+  --terracotta-light: #D96035;
+  --terracotta-bg: rgba(185, 68, 25, 0.08);
+
+  --golden: #E5B141;
+  --golden-light: #F2C968;
+  --golden-bg: rgba(229, 177, 65, 0.12);
+
+  --cream: #DBD9D5;
+  --cream-light: #F4F3F1;
+  --cream-pure: #FAFA9F;
+  --cream-card: #F0EEEA;
+
+  --emerald: #199B74;
+  --emerald-light: #25C394;
+  --emerald-dark: #116B50;
+  --emerald-bg: rgba(25, 155, 116, 0.1);
+
+  --charcoal: #56473A;
+  --charcoal-dark: #1E1712;
+  --charcoal-surface: #2E251E;
+  --charcoal-muted: #847568;
+
+  --forest-dark: #12211C;
+  --forest-surface: #1A2E28;
+  
+  /* Semantic Tokens */
+  --color-primary: var(--terracotta);
+  --color-primary-hover: #9E3813;
+  --color-accent-gold: var(--golden);
+  --color-accent-emerald: var(--emerald);
+  --color-dark-bg: var(--charcoal-dark);
+
+  /* Status Colors */
+  --status-healthy: #199B74;
+  --status-healthy-bg: rgba(25, 155, 116, 0.12);
+  --status-low: #E5B141;
+  --status-low-bg: rgba(229, 177, 65, 0.15);
+  --status-overstock: #3B82F6;
+  --status-overstock-bg: rgba(59, 130, 246, 0.12);
+  --status-critical: #B94419;
+  --status-critical-bg: rgba(185, 68, 25, 0.12);
+
+  /* Neutral Spectrum */
+  --bg-app: #F7F6F4;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #1E1712;
+  --text-main: #241D17;
+  --text-muted: #6B5E53;
+  --text-light: #A3968A;
+  --border-light: #E4E0D9;
+  --border-subtle: #ECE8E1;
+
+  /* Typography */
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4.5rem;
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(30, 23, 18, 0.04);
+  --shadow-md: 0 6px 20px rgba(30, 23, 18, 0.06);
+  --shadow-lg: 0 12px 32px rgba(30, 23, 18, 0.09);
+  --shadow-glow-emerald: 0 0 24px rgba(25, 155, 116, 0.25);
+  --shadow-glow-terracotta: 0 0 24px rgba(185, 68, 25, 0.25);
+
+  /* Transitions */
+  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
