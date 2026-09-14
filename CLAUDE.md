@@ -4,7 +4,7 @@
 - **Presentation Layer (`presentation/`):** React components and pages. Responsible ONLY for rendering and user interaction. No complex business logic.
 - **Domain Layer (`domain/`):** Business logic, custom hooks, and state management (Zustand stores). UI components must depend ONLY on this layer for logic.
 - **Data Layer (`data/`):** API clients, services, mock data, and data mapping. This layer handles all external communication.
-- Reusable code (UI components, constants, themes) must live in `src/core/`.
+- Reusable code (UI components, constants, themes) must live in `Web/src/core/`.
 
 ## 2) State Management (Zustand)
 - Use **Zustand** for feature and application state.
@@ -12,7 +12,7 @@
 - Logic for fetching data or transforming it should happen inside the store or domain hooks, not in the components.
 
 ## 3) Feature Folder Structure
-Every new feature must follow this structure:
+Every new feature must follow this structure inside `Web/src/`:
 - `features/{feature_name}/data/`
 - `features/{feature_name}/domain/`
 - `features/{feature_name}/presentation/`
