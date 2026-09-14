@@ -1,9 +1,13 @@
-# node_modules
+# React / Node
 node_modules/
-
-# Build output
 dist/
 build/
+
+# ML / Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+just_enough_ml_artifacts/
 
 # IDE files
 .idea/
