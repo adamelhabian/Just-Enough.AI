@@ -1,4 +1,4 @@
-﻿export const CONFIG = {
+export const CONFIG = {
   defaultMode: 'LIVE',
   storageKeys: {
     mode: 'just_enough_mode',
@@ -6,7 +6,7 @@
     user: 'just_enough_user',
     cachedData: 'just_enough_cache'
   },
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || ''
 };
 
 export class OfflineError extends Error {

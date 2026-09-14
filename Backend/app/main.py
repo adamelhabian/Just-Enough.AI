@@ -108,3 +108,38 @@ app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
 app.include_router(ingestion.router, prefix="/api/v1", tags=["ingestion"])
 app.include_router(forecasts.router, prefix="/api/v1", tags=["forecasts"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
+
+# Serve React SPA production build
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from fastapi import HTTPException
+
+# Locate Web/dist directory
+_repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_dist_dir = os.path.join(_repo_root, "Web", "dist")
+if not os.path.exists(_dist_dir):
+    _dist_dir = os.path.abspath(os.path.join(os.getcwd(), "Web", "dist"))
+
+_assets_dir = os.path.join(_dist_dir, "assets")
+if os.path.exists(_assets_dir):
+    app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
+
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    # Missing API endpoints must remain API 404 (do not return index.html)
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail=f"API endpoint '/{full_path}' not found")
+    
+    # Check if a static file in dist root matches
+    file_path = os.path.join(_dist_dir, full_path)
+    if full_path and os.path.isfile(file_path):
+        return FileResponse(file_path)
+    
+    # Serve index.html for all client-side SPA routes
+    index_path = os.path.join(_dist_dir, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    
+    return {"service": "JustEnough MVP Demand Engine", "status": "ok", "ui": "Web/dist not found"}
+

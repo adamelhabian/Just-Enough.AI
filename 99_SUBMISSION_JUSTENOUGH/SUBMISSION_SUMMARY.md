@@ -19,6 +19,11 @@ In high-volume commercial restaurant kitchens, food waste and stockouts stem fro
 ---
 
 ## 3. Evaluator Fast Pitch (30-Second Summary)
-JustEnough is ready to run out of the box with zero external database setup. Evaluators run the backend in one terminal (`python -m uvicorn app.main:app`) and the frontend in another (`npm run dev` or preview), log in with the pre-seeded admin credentials, review the 7-day quantile forecast, adjust a prep batch quantity, verify the audit log entry, and inspect live inventory stockout alerts—all running locally with zero cost.
+JustEnough is ready to run out of the box with zero external database setup. Evaluators can access the live unified public deployment directly:
+- **Public Application:** https://justenough-mvp.onrender.com/
+- **Public API Health:** https://justenough-mvp.onrender.com/api/v1/health
+- **Swagger Docs:** https://justenough-mvp.onrender.com/docs
+
+Evaluators can also run it locally in single-service mode (`python -m uvicorn app.main:app`), log in with pre-seeded admin credentials, review the 7-day quantile forecast, adjust a prep batch quantity, verify the audit log entry, and inspect live inventory stockout alerts—all running under a single unified origin.
 
 *Note on Data Mode: LIVE means the frontend is communicating with the real FastAPI backend rather than frontend mocks. The MVP uses local/sample restaurant data and is not a live customer production environment.*

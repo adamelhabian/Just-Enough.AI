@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout';
 import Input from '../../components/common/Input';
@@ -75,7 +75,7 @@ export const LoginPage = () => {
               fontSize: '0.875rem'
             }}
           >
-            <option value="LIVE" selected>LIVE (Production Backend http://127.0.0.1:8000)</option>
+            <option value="LIVE" selected>LIVE (Production Backend /api/v1)</option>
             <option value="DEMO">DEMO / SYNTHETIC (Offline Evaluation)</option>
           </select>
           {dataMode === 'DEMO' && (
